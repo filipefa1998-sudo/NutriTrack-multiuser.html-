@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>NutriTrack Pro</title>
 <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Satoshi:wght@300;400;500;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/zxing-js/0.18.6/index.min.js" crossorigin="anonymous"></script>
 <style>
 :root{
   --bg:#08090b;--surface:#0f1218;--card:#141921;--card2:#1a2230;
@@ -708,6 +707,62 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 /* Screen transition */
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
 
+
+/* ══════════════════════════════════════════
+   VITAMINS & SUPPLEMENTS
+   ══════════════════════════════════════════ */
+.vit-dashboard{padding:0 1rem 0.75rem;}
+.vit-macro-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:0.4rem;margin-bottom:0.75rem;}
+.vms-cell{background:var(--card);border:1px solid var(--border);border-radius:var(--r3);padding:0.6rem 0.5rem;text-align:center;position:relative;overflow:hidden;}
+.vms-cell::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 var(--r3) var(--r3);}
+.vms-val{font-family:var(--font-d);font-size:0.95rem;font-weight:700;line-height:1;}
+.vms-lbl{font-size:0.55rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;}
+.vms-pct{font-size:0.58rem;font-weight:600;margin-top:1px;}
+.vit-section-title{font-family:var(--font-d);font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem;display:flex;align-items:center;gap:0.4rem;}
+
+/* Supplement card */
+.supp-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:0.55rem;overflow:hidden;transition:border-color 0.2s;}
+.supp-card:hover{border-color:rgba(245,200,66,0.3);}
+.supp-header{padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;cursor:pointer;}
+.supp-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;}
+.supp-info{flex:1;}
+.supp-name{font-family:var(--font-d);font-size:0.85rem;font-weight:700;margin-bottom:1px;}
+.supp-dose{font-size:0.68rem;color:var(--muted);}
+.supp-taken{display:flex;align-items:center;gap:0.4rem;}
+.supp-check{width:28px;height:28px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;flex-shrink:0;font-size:0.75rem;}
+.supp-check.checked{background:var(--green);border-color:var(--green);color:#08090b;}
+.supp-check:hover{border-color:var(--green);}
+.supp-nutrient-bars{padding:0 1rem 0.65rem;border-top:1px solid rgba(30,42,61,0.5);}
+.snb-row{display:flex;align-items:center;gap:0.5rem;padding:0.22rem 0;}
+.snb-name{font-size:0.62rem;color:var(--muted);width:70px;flex-shrink:0;}
+.snb-bar-bg{flex:1;height:4px;background:var(--border2);border-radius:100px;overflow:hidden;}
+.snb-bar-fill{height:100%;border-radius:100px;transition:width 0.6s;}
+.snb-val{font-family:var(--font-d);font-size:0.62rem;font-weight:600;min-width:55px;text-align:right;}
+
+/* Add supplement form */
+.add-supp-form{background:var(--card);border:1px solid var(--border2);border-radius:var(--r2);padding:0.9rem 1rem;margin-bottom:0.75rem;}
+.supp-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;margin-bottom:0.5rem;}
+.supp-nutrient-inputs{display:flex;flex-direction:column;gap:0.3rem;margin-bottom:0.5rem;max-height:220px;overflow-y:auto;}
+.sni-row{display:flex;align-items:center;gap:0.35rem;}
+.sni-label{font-size:0.62rem;color:var(--muted);width:80px;flex-shrink:0;}
+.sni-in{flex:1;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--font-d);font-size:0.75rem;font-weight:600;padding:0.3rem 0.4rem;outline:none;text-align:right;transition:border-color 0.2s;}
+.sni-in:focus{border-color:var(--gold);}
+.sni-unit{font-size:0.58rem;color:var(--muted2);width:28px;flex-shrink:0;}
+
+/* Vitamin total display in main dash */
+.vit-dash-row{display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0;border-bottom:1px solid rgba(30,42,61,0.35);}
+.vit-dash-row:last-child{border-bottom:none;}
+.vit-dash-icon{font-size:1rem;width:22px;text-align:center;}
+.vit-dash-name{flex:1;font-size:0.75rem;font-weight:500;}
+.vit-dash-bar-bg{width:60px;height:4px;background:var(--border2);border-radius:100px;overflow:hidden;}
+.vit-dash-bar-fill{height:100%;border-radius:100px;}
+.vit-dash-val{font-family:var(--font-d);font-size:0.72rem;font-weight:700;min-width:48px;text-align:right;}
+
+/* Supp emoji picker */
+.emoji-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0.75rem;}
+.epick{width:34px;height:34px;border-radius:8px;background:var(--surface);border:1px solid var(--border2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all 0.2s;}
+.epick.sel{border-color:var(--gold);background:rgba(245,200,66,0.1);}
+
 </style>
 </head>
 <body>
@@ -816,7 +871,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <div id="insightCard"></div>
     </div>
   </div>
-  <div class="tp-divider"></div>
+  <div id="vitHomePanel"></div>
+<div class="tp-divider"></div>
 <div class="sec" style="margin-top:0.1rem;display:flex;align-items:center;justify-content:space-between;padding-right:1rem;">
   <span>Today's Meals</span>
   <button onclick="reorderMode=!reorderMode;showToast(reorderMode?'Drag to reorder meals':'Done reordering');renderHome();" style="font-family:var(--font-d);font-size:0.55rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;padding:2px 8px;border-radius:100px;background:rgba(245,200,66,0.1);border:1px solid rgba(245,200,66,0.2);color:var(--gold);cursor:pointer;" id="reorderToggle">⠿ Reorder</button>
@@ -1130,6 +1186,59 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   </div>
 </div>
 
+
+<!-- VITAMINS & SUPPLEMENTS SCREEN -->
+<div class="screen" id="screen-vitamins">
+  <div class="app-header">
+    <div><div class="header-logo">Vitamins</div><div class="header-sub">Supplements & daily nutrients</div></div>
+    <div class="hdr-av" id="vitaminsAv" onclick="showScreen('people')"></div>
+  </div>
+  <div class="header-pattern-strip"></div>
+
+  <!-- MACRO + VITAMIN SUMMARY STRIP -->
+  <div class="vit-dashboard">
+    <div class="vit-section-title">
+      <span>Today's Totals (Food + Supplements)</span>
+    </div>
+    <div class="vit-macro-strip" id="vitMacroStrip"></div>
+    <div id="vitNutrientBars"></div>
+    <div class="tp-divider"></div>
+  </div>
+
+  <!-- MY SUPPLEMENTS -->
+  <div style="padding:0 1rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem;">
+      <div class="vit-section-title" style="margin:0;">My Stack</div>
+      <button onclick="toggleAddSuppForm()" id="addSuppToggleBtn" style="font-family:var(--font-d);font-size:0.62rem;font-weight:700;letter-spacing:0.07em;padding:3px 10px;border-radius:100px;background:rgba(245,200,66,0.12);border:1px solid rgba(245,200,66,0.25);color:var(--gold);cursor:pointer;">+ Add</button>
+    </div>
+
+    <!-- ADD SUPPLEMENT FORM -->
+    <div class="add-supp-form" id="addSuppForm" style="display:none;">
+      <div class="um-lbl">Supplement Name</div>
+      <input class="fi fi-full" id="suppName" placeholder="e.g. Vitamin D3, Magnesium, Omega-3…" style="margin-bottom:0.55rem;">
+      <div class="um-lbl" style="margin-bottom:0.35rem;">Icon</div>
+      <div class="emoji-row" id="suppEmojiRow"></div>
+      <div class="supp-form-grid">
+        <div><div class="um-lbl" style="font-size:0.58rem;">Serving Size</div><input class="fi" id="suppServing" placeholder="e.g. 1 capsule" style="width:100%;"></div>
+        <div><div class="um-lbl" style="font-size:0.58rem;">Times Per Day</div><input class="fi" id="suppFreq" type="number" value="1" min="1" max="10" style="width:100%;"></div>
+      </div>
+      <div class="um-lbl" style="margin-bottom:0.4rem;">Nutrients per serving (leave blank if none)</div>
+      <div class="supp-nutrient-inputs" id="suppNutrientInputs"></div>
+      <button class="btn-gold" onclick="saveSupplementStack()">Save Supplement</button>
+      <button class="btn-outline" onclick="toggleAddSuppForm()" style="margin-top:0.35rem;">Cancel</button>
+    </div>
+
+    <div id="suppList"></div>
+
+    <!-- EMPTY STATE -->
+    <div id="suppEmpty" style="display:none;">
+      <div class="empty-st" style="padding:1.5rem 1rem;">
+        <span class="empty-ico">💊</span>
+        Add your vitamins and supplements to track how they contribute to your daily nutrient goals.
+      </div>
+    </div>
+  </div>
+</div>
 <!-- BOTTOM NAV -->
 <div id="reminderBanner"></div>
 <nav class="bottom-nav" style="height:auto;min-height:56px;flex-wrap:wrap;padding:4px 2px;">
@@ -1159,6 +1268,9 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   </button>
   <button class="nav-btn" id="nav-peptides" onclick="showScreen('peptides')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.5 2.5c0 1.5-1.5 5-1.5 5h-2S9.5 4 9.5 2.5a2.5 2.5 0 0 1 5 0z"/><line x1="12" y1="7.5" x2="12" y2="21"/></svg>Peptides
+  </button>
+  <button class="nav-btn" id="nav-vitamins" onclick="showScreen('vitamins')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>Vitamins
   </button>
   <button class="nav-btn" id="nav-people" onclick="showScreen('people')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>People
@@ -1417,6 +1529,11 @@ function renderHome() {
   document.getElementById('qStrk').textContent=calcStreak(u.id)+'🔥';
   // Insight
   renderInsight(u.id);
+
+  // Vitamin mini panel
+  const vitSum = getVitaminHomeSummary(u.id);
+  const vitPanel = document.getElementById('vitHomePanel');
+  if (vitPanel) vitPanel.innerHTML = vitSum;
   // Water
   renderWater(u.id, key);
   // Activity
@@ -1498,6 +1615,139 @@ function deleteFood(uid,key,meal,idx) {
 // ══════════════════════════════════════════════
 let curTarget=null, pFood=null, scannerActive=false, codeReader=null;
 
+// ══════════════════════════════════════════════
+// SELF-CONTAINED EAN-13 / UPC-A / EAN-8 DECODER
+// Pure JS — no library, no CDN, works fully offline
+// ══════════════════════════════════════════════
+const EAN = (() => {
+  // L-code digit patterns (7 modules each)
+  const L = ['0001101','0011001','0010011','0111101','0100011','0110001','0101111','0111011','0110111','0001011'];
+  // G-code (inverted L) and R-code (complement of L)
+  const G = L.map(p => p.split('').reverse().join(''));
+  const R = L.map(p => p.split('').map(b=>b==='0'?'1':'0').join(''));
+  // First digit parity patterns for EAN-13
+  const PARITY13 = ['LLLLLL','LLGLGG','LLGGLG','LLGGGL','LGLLGG','LGGLLG','LGGGLL','LGLGLG','LGLGGL','LGGLGL'];
+
+  function matchDigit(bits, tables) {
+    for (let d = 0; d < 10; d++) {
+      for (const tbl of tables) {
+        if (tbl[d] === bits) return {digit: d, code: tbl === L ? 'L' : tbl === G ? 'G' : 'R'};
+      }
+    }
+    return null;
+  }
+
+  function decodeRow(pixels, threshold) {
+    // Convert pixel row to bit string using adaptive threshold
+    const w = pixels.length;
+    const bits = pixels.map(p => p < threshold ? '1' : '0').join('');
+
+    // Find start guard: 101
+    for (let s = 0; s < w - 95; s++) {
+      if (bits[s]==='1' && bits[s+1]==='0' && bits[s+2]==='1') {
+        // Try to decode from position s
+        const result = tryDecode(bits, s);
+        if (result) return result;
+      }
+    }
+    return null;
+  }
+
+  function tryDecode(bits, start) {
+    let pos = start + 3; // skip start guard 101
+    const leftDigits = [], leftCodes = [];
+
+    for (let i = 0; i < 6; i++) {
+      if (pos + 7 > bits.length) return null;
+      const seg = bits.slice(pos, pos+7);
+      const m = matchDigit(seg, [L, G]);
+      if (!m) return null;
+      leftDigits.push(m.digit);
+      leftCodes.push(m.code === 'L' ? 'L' : 'G');
+      pos += 7;
+    }
+
+    // Middle guard: 01010
+    if (bits.slice(pos, pos+5) !== '01010') return null;
+    pos += 5;
+
+    const rightDigits = [];
+    for (let i = 0; i < 6; i++) {
+      if (pos + 7 > bits.length) return null;
+      const seg = bits.slice(pos, pos+7);
+      const m = matchDigit(seg, [R]);
+      if (!m) return null;
+      rightDigits.push(m.digit);
+      pos += 7;
+    }
+
+    // End guard: 101
+    if (bits.slice(pos, pos+3) !== '101') return null;
+
+    // Decode first digit from parity pattern
+    const parity = leftCodes.join('');
+    const firstDigit = PARITY13.indexOf(parity);
+    if (firstDigit < 0) {
+      // Try UPC-A (all L codes = first digit 0)
+      if (parity !== 'LLLLLL') return null;
+    }
+
+    const full = String(firstDigit < 0 ? 0 : firstDigit) + leftDigits.join('') + rightDigits.join('');
+
+    // Validate check digit
+    let sum = 0;
+    for (let i = 0; i < 12; i++) sum += parseInt(full[i]) * (i%2===0 ? 1 : 3);
+    const check = (10 - (sum % 10)) % 10;
+    if (check !== parseInt(full[12])) return null;
+    return full;
+  }
+
+  function sampleRow(imageData, y, w) {
+    const row = [];
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      // Greyscale
+      row.push(Math.round(imageData.data[i]*0.299 + imageData.data[i+1]*0.587 + imageData.data[i+2]*0.114));
+    }
+    return row;
+  }
+
+  function otsuThreshold(pixels) {
+    const hist = new Array(256).fill(0);
+    pixels.forEach(p => hist[p]++);
+    const total = pixels.length;
+    let sum = 0;
+    for (let i = 0; i < 256; i++) sum += i * hist[i];
+    let sumB=0, wB=0, wF=0, varMax=0, thresh=128;
+    for (let t=0; t<256; t++) {
+      wB += hist[t]; if (!wB) continue;
+      wF = total - wB; if (!wF) break;
+      sumB += t * hist[t];
+      const mB=sumB/wB, mF=(sum-sumB)/wF;
+      const v=wB*wF*(mB-mF)*(mB-mF);
+      if (v > varMax) { varMax=v; thresh=t; }
+    }
+    return thresh;
+  }
+
+  return {
+    decode(imageData, w, h) {
+      // Sample multiple horizontal rows across the middle 60% of the image
+      const results = {};
+      for (let r = 0; r < 20; r++) {
+        const y = Math.round(h * 0.2 + (h * 0.6 * r / 20));
+        const row = sampleRow(imageData, y, w);
+        const thresh = otsuThreshold(row);
+        const code = decodeRow(row, thresh);
+        if (code) results[code] = (results[code]||0)+1;
+      }
+      // Return the code that appeared most (stability check)
+      const best = Object.entries(results).sort((a,b)=>b[1]-a[1])[0];
+      return best && best[1] >= 2 ? best[0] : null;
+    }
+  };
+})();
+
 function openAddFood(meal,key,uid,forPlanner=false) {
   curTarget={meal,key,uid,forPlanner};
   document.getElementById('addFoodModal').classList.add('open');
@@ -1509,39 +1759,129 @@ function openAddFood(meal,key,uid,forPlanner=false) {
 function closeAddFood(){document.getElementById('addFoodModal').classList.remove('open');stopScanner();}
 document.getElementById('addFoodModal').addEventListener('click',e=>{if(e.target===document.getElementById('addFoodModal'))closeAddFood();});
 
+// ══════════════════════════════════════════════
 // BARCODE SCANNER
+// Uses inline EAN-13/UPC-A decoder (no CDN)
+// + native BarcodeDetector when available
+// + manual barcode entry as always-on fallback
+// ══════════════════════════════════════════════
+let scanStream = null, scanLoop = null;
+
 async function toggleScanner() {
-  if(scannerActive){stopScanner();return;}
-  const sec=document.getElementById('scannerSection');
-  sec.style.display='block';
-  document.getElementById('scanStatus').textContent='Starting camera…';
-  scannerActive=true;
+  if (scannerActive) { stopScanner(); return; }
+  const sec = document.getElementById('scannerSection');
+  sec.style.display = 'block';
+  scannerActive = true;
+
+  // Always show manual entry row immediately
+  if (!document.getElementById('manualBarcodeRow')) {
+    const row = document.createElement('div');
+    row.id = 'manualBarcodeRow';
+    row.style.cssText = 'display:flex;gap:0.4rem;margin-top:0.5rem;';
+    row.innerHTML = `
+      <input id="manualBarcodeIn" class="srch-in" placeholder="Or type barcode number here…" style="flex:1;" inputmode="numeric" pattern="[0-9]*">
+      <button class="btn-gold" style="width:auto;padding:0 0.75rem;white-space:nowrap;font-size:0.8rem;" onclick="manualBarcodeSubmit()">Look up</button>`;
+    sec.appendChild(row);
+  }
+
+  // Try camera
+  if (!navigator.mediaDevices?.getUserMedia) {
+    setStatus('📷 Camera not supported — use manual entry below'); return;
+  }
+
   try {
-    if(typeof ZXing==='undefined') throw new Error('ZXing not loaded');
-    codeReader=new ZXing.BrowserMultiFormatReader();
-    const devices=await codeReader.listVideoInputDevices();
-    const camId=devices.length>1?devices[devices.length-1].deviceId:devices[0]?.deviceId;
-    document.getElementById('scanStatus').textContent='Scanning… aim at barcode';
-    codeReader.decodeFromVideoDevice(camId,'scannerVideo',async(result,err)=>{
-      if(result){
-        const code=result.getText();
-        document.getElementById('scanStatus').textContent='Found: '+code+' — Looking up…';
-        stopScanner();
-        await lookupBarcode(code);
-      }
+    setStatus('Starting camera…');
+    scanStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: {ideal:'environment'}, width:{ideal:1280}, height:{ideal:720} }
     });
+    const video = document.getElementById('scannerVideo');
+    video.srcObject = scanStream;
+    await video.play();
+    setStatus('🔍 Aim at barcode — hold steady');
+
+    // Set up off-screen decode canvas
+    const cvs = document.createElement('canvas');
+    const ctx = cvs.getContext('2d', {willReadFrequently: true});
+    let frameCount = 0;
+
+    scanLoop = setInterval(() => {
+      if (!scannerActive || video.readyState < 2) return;
+      frameCount++;
+      // Pulse the status dot
+      const dots = ['⠶','⠦','⠖','⠲'][frameCount % 4];
+      setStatus('🔍 Scanning ' + dots + ' — hold barcode in frame');
+
+      const vw = video.videoWidth, vh = video.videoHeight;
+      if (!vw || !vh) return;
+      cvs.width = vw; cvs.height = vh;
+      ctx.drawImage(video, 0, 0, vw, vh);
+
+      let code = null;
+
+      // 1. Try native BarcodeDetector (fastest, when available — Chrome Android)
+      if ('BarcodeDetector' in window && !window._bdFailed) {
+        if (!window._bd) {
+          try { window._bd = new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','qr_code']}); }
+          catch(e) { window._bdFailed = true; }
+        }
+        if (window._bd) {
+          window._bd.detect(video).then(barcodes => {
+            if (barcodes.length && scannerActive) {
+              onCodeFound(barcodes[0].rawValue);
+            }
+          }).catch(()=>{ window._bdFailed = true; });
+          return; // BarcodeDetector runs async, skip canvas decode this frame
+        }
+      }
+
+      // 2. Inline EAN-13/UPC-A decoder from canvas pixels
+      try {
+        const imgData = ctx.getImageData(0, 0, vw, vh);
+        code = EAN.decode(imgData, vw, vh);
+      } catch(e) {}
+
+      if (code) onCodeFound(code);
+    }, 250);
+
   } catch(e) {
-    document.getElementById('scanStatus').textContent='Camera error: '+e.message;
-    setTimeout(stopScanner,3000);
+    let msg;
+    if (e.name === 'NotAllowedError') msg = '🚫 Camera blocked — allow camera in browser settings, or use manual entry below';
+    else if (e.name === 'NotFoundError') msg = '📷 No camera detected — use manual entry below';
+    else msg = '⚠️ Camera unavailable — use manual entry below';
+    setStatus(msg);
   }
 }
+
+function setStatus(msg) {
+  const el = document.getElementById('scanStatus');
+  if (el) el.textContent = msg;
+}
+
+function onCodeFound(code) {
+  if (!scannerActive) return;
+  if (navigator.vibrate) navigator.vibrate([30, 20, 30]);
+  setStatus('✅ Found: ' + code + ' — looking up…');
+  stopScanner();
+  lookupBarcode(code);
+}
+
+async function manualBarcodeSubmit() {
+  const code = (document.getElementById('manualBarcodeIn')?.value || '').trim().replace(/\D/g,'');
+  if (!code) { showToast('Enter a barcode number', 'var(--red)'); return; }
+  stopScanner();
+  await lookupBarcode(code);
+}
+
 function stopScanner() {
-  scannerActive=false;
-  if(codeReader){try{codeReader.reset();}catch(e){}}
-  codeReader=null;
-  document.getElementById('scannerSection').style.display='none';
-  const video=document.getElementById('scannerVideo');
-  if(video.srcObject){video.srcObject.getTracks().forEach(t=>t.stop());video.srcObject=null;}
+  scannerActive = false;
+  if (scanLoop) { clearInterval(scanLoop); scanLoop = null; }
+  if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  const video = document.getElementById('scannerVideo');
+  if (video) { video.srcObject = null; }
+  const sec = document.getElementById('scannerSection');
+  if (sec) sec.style.display = 'none';
+  const mr = document.getElementById('manualBarcodeRow');
+  if (mr) mr.remove();
 }
 async function lookupBarcode(code) {
   const res=document.getElementById('searchResults');
@@ -3165,6 +3505,334 @@ function addTonganAccents() {
   });
 }
 
+
+// ══════════════════════════════════════════════
+// VITAMINS & SUPPLEMENTS
+// ══════════════════════════════════════════════
+
+// Full nutrient reference list with daily goals
+const SUPP_NUTRIENTS = [
+  {key:'vitA',   label:'Vitamin A',  unit:'mcg', goal:900,  color:'#f5923e'},
+  {key:'vitB1',  label:'Vitamin B1', unit:'mg',  goal:1.2,  color:'#f5c842'},
+  {key:'vitB2',  label:'Vitamin B2', unit:'mg',  goal:1.3,  color:'#f5c842'},
+  {key:'vitB3',  label:'Vitamin B3', unit:'mg',  goal:16,   color:'#f5c842'},
+  {key:'vitB5',  label:'Vitamin B5', unit:'mg',  goal:5,    color:'#f5c842'},
+  {key:'vitB6',  label:'Vitamin B6', unit:'mg',  goal:1.7,  color:'#f5c842'},
+  {key:'vitB7',  label:'Biotin',     unit:'mcg', goal:30,   color:'#9b72f5'},
+  {key:'vitB9',  label:'Folate',     unit:'mcg', goal:400,  color:'#9b72f5'},
+  {key:'vitB12', label:'Vitamin B12',unit:'mcg', goal:2.4,  color:'#9b72f5'},
+  {key:'vitC',   label:'Vitamin C',  unit:'mg',  goal:90,   color:'#38c9c9'},
+  {key:'vitD',   label:'Vitamin D',  unit:'mcg', goal:20,   color:'#f5c842'},
+  {key:'vitE',   label:'Vitamin E',  unit:'mg',  goal:15,   color:'#3dd68c'},
+  {key:'vitK',   label:'Vitamin K',  unit:'mcg', goal:120,  color:'#3dd68c'},
+  {key:'calcium',label:'Calcium',    unit:'mg',  goal:1000, color:'#4d9de0'},
+  {key:'iron',   label:'Iron',       unit:'mg',  goal:18,   color:'#f5564a'},
+  {key:'magnesium',label:'Magnesium',unit:'mg',  goal:400,  color:'#9b72f5'},
+  {key:'zinc',   label:'Zinc',       unit:'mg',  goal:11,   color:'#38c9c9'},
+  {key:'potassium',label:'Potassium',unit:'mg',  goal:4700, color:'#3dd68c'},
+  {key:'sodium', label:'Sodium',     unit:'mg',  goal:2300, color:'#f5923e'},
+  {key:'omega3', label:'Omega-3',    unit:'mg',  goal:1600, color:'#4d9de0'},
+  {key:'fiber',  label:'Fiber',      unit:'g',   goal:35,   color:'#f5923e'},
+  {key:'protein',label:'Protein',    unit:'g',   goal:240,  color:'#3dd68c'},
+];
+
+const SUPP_EMOJIS = ['💊','🫐','🧴','🟡','🔴','🟠','🟢','🔵','⚪','🌿','🫘','🥛','🥩','🐟','🌻','🥦','🫚','🍋'];
+
+let suppAddEmoji = '💊';
+
+function getVitaminTotals(uid, dateKey) {
+  // Food-sourced nutrients from diary
+  const m = sumMacros(uid, dateKey);
+  const totals = {
+    vitC: m.vitC || 0, vitD: m.vitD || 0,
+    calcium: m.calcium || 0, iron: m.iron || 0,
+    magnesium: m.magnesium || 0, zinc: m.zinc || 0,
+    potassium: m.potassium || 0, sodium: m.sodium || 0,
+    fiber: m.fb || 0, protein: m.p || 0,
+    vitA:0, vitB1:0, vitB2:0, vitB3:0, vitB5:0,
+    vitB6:0, vitB7:0, vitB9:0, vitB12:0,
+    vitE:0, vitK:0, omega3:0
+  };
+  // Add supplement contributions (only if taken today)
+  const u = ST.users[uid];
+  const taken = u.suppTaken?.[dateKey] || {};
+  (u.supplements || []).forEach((supp, i) => {
+    if (!taken[i]) return; // only if checked today
+    SUPP_NUTRIENTS.forEach(n => {
+      if (supp.nutrients?.[n.key]) {
+        totals[n.key] = (totals[n.key] || 0) + (supp.nutrients[n.key] * (supp.freq || 1));
+      }
+    });
+  });
+  return totals;
+}
+
+function renderVitamins() {
+  const u = AU(); const key = dk();
+  if (!u.supplements) u.supplements = [];
+  if (!u.suppTaken) u.suppTaken = {};
+  if (!u.suppTaken[key]) u.suppTaken[key] = {};
+
+  const totals = getVitaminTotals(u.id, key);
+  const m = sumMacros(u.id, key);
+  const g = u.goals;
+
+  // ── MACRO STRIP (calories, protein, carbs, fat) ──
+  const macroStrip = document.getElementById('vitMacroStrip');
+  if (macroStrip) {
+    const macros = [
+      {label:'Calories', val:m.cal, goal:g.calories,      unit:'kcal', color:'var(--gold)'},
+      {label:'Protein',  val:m.p,   goal:g.protein,        unit:'g',    color:'var(--green)'},
+      {label:'Carbs',    val:m.c,   goal:g.carbs,          unit:'g',    color:'var(--blue)'},
+      {label:'Fat',      val:m.f,   goal:g.fat,            unit:'g',    color:'var(--purple)'},
+      {label:'Fiber',    val:m.fb,  goal:g.fiber||35,       unit:'g',    color:'var(--orange)'},
+      {label:'Water',    val:getDayData(u.id,key).water||0, goal:g.water||128, unit:'oz', color:'#4d9de0'},
+    ];
+    macroStrip.innerHTML = macros.map(x => {
+      const p = Math.min(100, Math.round(x.val / x.goal * 100));
+      const over = x.val > x.goal;
+      const statusColor = over ? 'var(--red)' : p >= 90 ? 'var(--green)' : p >= 50 ? x.color : 'var(--muted)';
+      return `<div class="vms-cell glass" style="grid-column:span 1;">
+        <div style="font-size:0.55rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-family:var(--font-d);margin-bottom:3px;">${x.label}</div>
+        <div style="font-family:var(--font-d);font-size:1rem;font-weight:700;color:${x.color};line-height:1;">${x.val}<span style="font-size:0.52rem;font-weight:400;color:var(--muted);"> ${x.unit}</span></div>
+        <div style="font-size:0.6rem;font-weight:700;color:${statusColor};margin:2px 0;">${p}%</div>
+        <div style="height:4px;background:var(--border2);border-radius:100px;overflow:hidden;"><div style="height:100%;width:${p}%;background:${x.color};border-radius:100px;transition:width 0.7s;"></div></div>
+        <div style="font-size:0.52rem;color:var(--muted2);margin-top:2px;">/ ${x.goal} ${x.unit}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── NUTRIENT BARS — all 22 nutrients combined from food + supplements ──
+  const bars = document.getElementById('vitNutrientBars');
+  if (bars) {
+    // Separate vitamins from minerals for display grouping
+    const vitamins = SUPP_NUTRIENTS.filter(n => n.key.startsWith('vit') || n.key === 'omega3');
+    const minerals = SUPP_NUTRIENTS.filter(n => !n.key.startsWith('vit') && n.key !== 'omega3' && n.key !== 'protein' && n.key !== 'fiber');
+
+    function nutrientRowHTML(n) {
+      const raw = totals[n.key] || 0;
+      const val = raw >= 10 ? Math.round(raw) : Math.round(raw * 10) / 10;
+      const goal = n.key === 'protein' ? g.protein : n.key === 'fiber' ? (g.fiber||35) : n.goal;
+      const p = Math.min(100, Math.round(val / goal * 100));
+      const over = val > goal;
+      const fromSupp = (u.supplements||[]).filter((s,i) => s.nutrients?.[n.key] && u.suppTaken?.[key]?.[i]).reduce((acc, s) => acc + (s.nutrients[n.key] * (s.freq||1)), 0);
+      const suppPct = goal > 0 ? Math.min(100, Math.round(fromSupp / goal * 100)) : 0;
+      const foodPct = Math.min(100, p - suppPct);
+      const statusColor = over ? 'var(--red)' : p >= 80 ? 'var(--green)' : p >= 40 ? 'var(--gold)' : 'var(--muted)';
+
+      return `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.28rem 0;border-bottom:1px solid rgba(30,42,61,0.4);">
+        <div style="font-size:0.7rem;color:var(--text);width:80px;flex-shrink:0;font-weight:500;">${n.label}</div>
+        <div style="flex:1;height:6px;background:var(--border2);border-radius:100px;overflow:hidden;position:relative;">
+          <div style="position:absolute;left:0;top:0;height:100%;width:${Math.max(foodPct,0)}%;background:${n.color};border-radius:100px;opacity:0.9;transition:width 0.6s;"></div>
+          ${suppPct > 0 ? `<div style="position:absolute;left:${Math.max(foodPct,0)}%;top:0;height:100%;width:${suppPct}%;background:${n.color};border-radius:100px;opacity:0.5;transition:width 0.6s;"></div>` : ''}
+        </div>
+        <div style="font-family:var(--font-d);font-size:0.68rem;font-weight:700;min-width:70px;text-align:right;color:${statusColor};">${val}<span style="font-size:0.52rem;color:var(--muted);font-weight:400;"> /${goal}${n.unit}</span></div>
+      </div>`;
+    }
+
+    const hasAnyData = SUPP_NUTRIENTS.some(n => (totals[n.key]||0) > 0);
+
+    bars.innerHTML = `
+      <div style="font-size:0.58rem;color:var(--muted2);margin-bottom:0.5rem;line-height:1.5;">
+        <span style="display:inline-flex;align-items:center;gap:3px;margin-right:0.75rem;"><span style="display:inline-block;width:10px;height:4px;border-radius:2px;background:var(--gold);"></span> From food</span>
+        <span style="display:inline-flex;align-items:center;gap:3px;"><span style="display:inline-block;width:10px;height:4px;border-radius:2px;background:var(--gold);opacity:0.4;"></span> From supplements</span>
+      </div>
+      ${!hasAnyData ? `<div style="font-size:0.75rem;color:var(--muted);padding:0.75rem 0;">Log food or mark supplements as taken to see nutrients here.</div>` : ''}
+      <div style="font-family:var(--font-d);font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin:0.5rem 0 0.2rem;">Vitamins</div>
+      ${vitamins.map(nutrientRowHTML).join('')}
+      <div style="font-family:var(--font-d);font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin:0.75rem 0 0.2rem;">Minerals & Other</div>
+      ${minerals.map(nutrientRowHTML).join('')}
+    `;
+  }
+
+  // ── SUPPLEMENT LIST ──
+  const list = document.getElementById('suppList');
+  const empty = document.getElementById('suppEmpty');
+  if (!u.supplements.length) {
+    if (list) list.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  if (!list) return;
+
+  const takenCount = Object.values(u.suppTaken[key]||{}).filter(Boolean).length;
+  list.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;font-size:0.68rem;">
+      <span style="color:var(--muted);">${takenCount} of ${u.supplements.length} taken today</span>
+      <button onclick="markAllSuppTaken()" style="font-family:var(--font-d);font-size:0.58rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:rgba(61,214,140,0.1);border:1px solid rgba(61,214,140,0.25);color:var(--green);padding:2px 8px;border-radius:100px;cursor:pointer;">✓ Mark all taken</button>
+    </div>
+  ` + u.supplements.map((supp, i) => {
+    const taken = u.suppTaken?.[key]?.[i] || false;
+    const hasNutrients = SUPP_NUTRIENTS.some(n => supp.nutrients?.[n.key] > 0);
+    const topNutrients = hasNutrients ? SUPP_NUTRIENTS
+      .filter(n => supp.nutrients?.[n.key] > 0)
+      .slice(0, 5)
+      .map(n => `<span style="font-size:0.6rem;background:rgba(${n.color.startsWith('#') ? hexToRgb2(n.color) : '245,200,66'},0.12);color:${n.color};padding:1px 5px;border-radius:100px;margin-right:2px;">${n.label}: ${supp.nutrients[n.key]}${n.unit}</span>`)
+      .join('') : '';
+    const nutrientBars = hasNutrients ? SUPP_NUTRIENTS
+      .filter(n => supp.nutrients?.[n.key] > 0)
+      .map(n => {
+        const perDose = supp.nutrients[n.key] * (supp.freq || 1);
+        const goal = n.key === 'protein' ? g.protein : n.key === 'fiber' ? (g.fiber||35) : n.goal;
+        const p = Math.min(100, Math.round(perDose / goal * 100));
+        return `<div class="snb-row">
+          <div class="snb-name">${n.label}</div>
+          <div class="snb-bar-bg"><div class="snb-bar-fill" style="width:${p}%;background:${n.color};opacity:${taken?1:0.35};transition:all 0.5s;"></div></div>
+          <div class="snb-val" style="color:${taken?n.color:'var(--muted2)'};">${perDose}${n.unit} <span style="color:var(--muted2);font-size:0.55rem;">(${p}% DV)</span></div>
+        </div>`;
+      }).join('') : '';
+
+    return `<div class="supp-card ${taken?'':''}">
+      <div class="supp-header" onclick="toggleSuppDetail(${i})">
+        <div class="supp-icon" style="background:${taken?'rgba(61,214,140,0.15)':'rgba(30,42,61,0.6)'};transition:background 0.3s;">${supp.emoji || '💊'}</div>
+        <div class="supp-info">
+          <div class="supp-name">${supp.name}</div>
+          <div class="supp-dose">${supp.serving || '1 serving'} · ${supp.freq||1}x daily</div>
+          <div style="margin-top:3px;flex-wrap:wrap;display:flex;gap:2px;">${topNutrients}</div>
+        </div>
+        <div class="supp-taken">
+          <div class="supp-check ${taken?'checked':''}" onclick="event.stopPropagation();toggleSuppTaken(${i})" title="${taken?'Mark not taken':'Mark as taken'}">${taken?'✓':''}</div>
+          <button onclick="event.stopPropagation();deleteSupp(${i})" style="background:none;border:none;color:var(--muted2);cursor:pointer;font-size:0.7rem;padding:4px;" title="Remove">✕</button>
+        </div>
+      </div>
+      ${hasNutrients ? `<div class="supp-nutrient-bars" id="suppDetail${i}" style="display:none;"><div style="font-size:0.62rem;color:var(--muted);margin-bottom:0.3rem;">Contribution per daily dose (${taken?'<span style=color:var(--green)>counted in totals</span>':'<span style=color:var(--muted2)>not yet taken</span>'}):</div>${nutrientBars}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function hexToRgb2(hex) {
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return `${r},${g},${b}`;
+}
+
+function markAllSuppTaken() {
+  const u = AU(); const key = dk();
+  if (!u.suppTaken) u.suppTaken = {};
+  if (!u.suppTaken[key]) u.suppTaken[key] = {};
+  u.supplements.forEach((_, i) => { u.suppTaken[key][i] = true; });
+  save(); renderVitamins();
+  showToast('✓ All supplements marked as taken!');
+}
+
+function toggleSuppDetail(i) {
+  const el = document.getElementById('suppDetail' + i);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleSuppTaken(i) {
+  const u = AU(); const key = dk();
+  if (!u.suppTaken) u.suppTaken = {};
+  if (!u.suppTaken[key]) u.suppTaken[key] = {};
+  u.suppTaken[key][i] = !u.suppTaken[key][i];
+  save();
+  renderVitamins();
+  // Update home dash if visible
+  if (document.getElementById('screen-home').classList.contains('active')) renderHome();
+  showToast(u.suppTaken[key][i] ? '✓ ' + u.supplements[i].name + ' taken!' : 'Unmarked');
+}
+
+function deleteSupp(i) {
+  if (!confirm('Remove this supplement?')) return;
+  AU().supplements.splice(i, 1);
+  save(); renderVitamins();
+}
+
+function toggleAddSuppForm() {
+  const form = document.getElementById('addSuppForm');
+  const btn = document.getElementById('addSuppToggleBtn');
+  if (!form) return;
+  const open = form.style.display === 'none' || form.style.display === '';
+  form.style.display = open ? 'block' : 'none';
+  if (btn) btn.textContent = open ? '✕ Close' : '+ Add';
+  if (open) {
+    // Build emoji picker
+    const row = document.getElementById('suppEmojiRow');
+    if (row && !row.dataset.built) {
+      row.dataset.built = '1';
+      suppAddEmoji = '💊';
+      row.innerHTML = SUPP_EMOJIS.map(e => `<div class="epick ${e==='💊'?'sel':''}" onclick="pickSuppEmoji('${e}',this)">${e}</div>`).join('');
+    }
+    // Build nutrient inputs
+    const inputs = document.getElementById('suppNutrientInputs');
+    if (inputs && !inputs.dataset.built) {
+      inputs.dataset.built = '1';
+      inputs.innerHTML = SUPP_NUTRIENTS.map(n =>
+        `<div class="sni-row">
+          <div class="sni-label">${n.label}</div>
+          <input class="sni-in" id="sni_${n.key}" type="number" placeholder="0" min="0" step="0.01">
+          <div class="sni-unit">${n.unit}</div>
+        </div>`).join('');
+    }
+    document.getElementById('suppName')?.focus();
+  }
+}
+
+function pickSuppEmoji(e, el) {
+  suppAddEmoji = e;
+  document.querySelectorAll('.epick').forEach(ep => ep.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function saveSupplementStack() {
+  const name = (document.getElementById('suppName')?.value || '').trim();
+  if (!name) { showToast('Enter supplement name', 'var(--red)'); return; }
+  const nutrients = {};
+  SUPP_NUTRIENTS.forEach(n => {
+    const val = parseFloat(document.getElementById('sni_' + n.key)?.value || 0);
+    if (val > 0) nutrients[n.key] = val;
+  });
+  const u = AU();
+  if (!u.supplements) u.supplements = [];
+  u.supplements.push({
+    name,
+    emoji: suppAddEmoji,
+    serving: document.getElementById('suppServing')?.value || '1 capsule',
+    freq: parseInt(document.getElementById('suppFreq')?.value) || 1,
+    nutrients
+  });
+  save();
+  // Reset form
+  document.getElementById('suppName').value = '';
+  document.getElementById('suppServing').value = '';
+  document.getElementById('suppFreq').value = '1';
+  SUPP_NUTRIENTS.forEach(n => { const el = document.getElementById('sni_'+n.key); if(el) el.value = ''; });
+  const row = document.getElementById('suppEmojiRow'); if(row) { row.dataset.built=''; row.innerHTML=''; }
+  const inputs = document.getElementById('suppNutrientInputs'); if(inputs) { inputs.dataset.built=''; inputs.innerHTML=''; }
+  toggleAddSuppForm();
+  renderVitamins();
+  showToast('✓ ' + name + ' added to your stack!');
+}
+
+// Also show a mini vitamin panel on the HOME screen in the insight area
+function getVitaminHomeSummary(uid) {
+  const key = dk();
+  const u = ST.users[uid];
+  if (!u.supplements?.length) return '';
+  const totals = getVitaminTotals(uid, key);
+  const taken = u.suppTaken?.[key] || {};
+  const takenCount = Object.values(taken).filter(Boolean).length;
+  const total = u.supplements.length;
+  const nutrients = SUPP_NUTRIENTS.filter(n => (totals[n.key]||0) > 0).slice(0, 4);
+  if (!nutrients.length) return '';
+  return `<div style="margin:0 1rem 0.65rem;background:rgba(155,114,245,0.08);border:1px solid rgba(155,114,245,0.2);border-radius:var(--r3);padding:0.75rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+      <div style="font-family:var(--font-d);font-size:0.62rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#b89aff;">💊 Supplements</div>
+      <div style="font-size:0.65rem;color:var(--muted);">${takenCount}/${total} taken today</div>
+    </div>
+    ${nutrients.map(n => {
+      const g2 = n.key==='protein'?u.goals.protein:n.key==='fiber'?(u.goals.fiber||35):n.goal;
+      const p = Math.min(100,Math.round((totals[n.key]||0)/g2*100));
+      return `<div style="display:flex;align-items:center;gap:0.4rem;padding:2px 0;">
+        <div style="font-size:0.62rem;color:var(--muted);width:70px;">${n.label}</div>
+        <div style="flex:1;height:3px;background:var(--border2);border-radius:100px;overflow:hidden;"><div style="height:100%;width:${p}%;background:${n.color};border-radius:100px;"></div></div>
+        <div style="font-family:var(--font-d);font-size:0.62rem;color:${n.color};min-width:40px;text-align:right;">${Math.round(totals[n.key]||0)}${n.unit}</div>
+      </div>`;
+    }).join('')}
+    <button onclick="showScreen('vitamins')" style="margin-top:0.45rem;font-family:var(--font-d);font-size:0.6rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:none;border:none;color:#b89aff;cursor:pointer;padding:0;">View full stack →</button>
+  </div>`;
+}
+
 // ══════════════════════════════════════════════
 // PATCH showScreen for new screens
 // ══════════════════════════════════════════════
@@ -3176,7 +3844,7 @@ function showScreen(name) {
   if (sc) sc.classList.add('active');
   const nb = document.getElementById('nav-'+name);
   if (nb) nb.classList.add('active');
-  const extraFns = {photo: ()=>{}, report: renderReport, measurements: renderMeasurements, peptides: renderPeptideLog};
+  const extraFns = {photo: ()=>{}, report: renderReport, measurements: renderMeasurements, peptides: renderPeptideLog, vitamins: renderVitamins};
   const baseFns = {home:renderHome, diary:renderDiary, recipes:renderRecipes, planner:renderPlanner, progress:renderProgress, people:renderPeople, profile:renderProfile};
   const fn = {...baseFns, ...extraFns}[name];
   if (fn) fn();
@@ -3187,7 +3855,7 @@ function showScreen(name) {
 const _origRHA = renderHeaderAvatars;
 function renderHeaderAvatars() {
   const u = AU();
-  ['headerAv','diaryAv','recipesAv','plannerAv','progressAv','photoAv','reportAv','measureAv','peptidesAv'].forEach(id=>{
+  ['headerAv','diaryAv','recipesAv','plannerAv','progressAv','photoAv','reportAv','measureAv','peptidesAv','vitaminsAv'].forEach(id=>{
     const el = document.getElementById(id);
     if (el) { el.style.background = u.color; el.textContent = ini(u.name); }
   });
