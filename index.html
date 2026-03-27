@@ -1380,9 +1380,15 @@ body::after{
 </div>
 <!-- PROFILE SCREEN -->
 <div class="screen" id="screen-profile">
-  <div class="app-header"><div><div class="header-logo">Profile</div></div></div>
+  <div class="app-header">
+    <div><div class="header-logo">Profile</div></div>
+    <div style="display:flex;gap:0.4rem;">
+      <button onclick="openEditProfile()" style="font-family:var(--font-d);font-size:0.6rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;padding:4px 10px;border-radius:100px;background:rgba(247,204,75,0.12);border:1px solid rgba(247,204,75,0.25);color:var(--gold);cursor:pointer;">✏️ Edit</button>
+      <div id="profDeleteBtn" style="display:none;"><button onclick="deleteCurrentProfile()" style="font-family:var(--font-d);font-size:0.6rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;padding:4px 10px;border-radius:100px;background:rgba(245,86,74,0.12);border:1px solid rgba(245,86,74,0.25);color:var(--red);cursor:pointer;">🗑 Delete</button></div>
+    </div>
+  </div>
   <div class="profile-hero">
-    <div class="profile-av-big" id="profAvBig"></div>
+    <div class="profile-av-big" id="profAvBig" onclick="openEditProfile()" style="cursor:pointer;" title="Tap to edit"></div>
     <div class="profile-name" id="profName"></div>
     <div class="profile-tag" id="profTag"></div>
     <div style="margin-top:0.6rem;" id="profTags"></div>
@@ -1660,6 +1666,24 @@ body::after{
       <input class="srch-in" id="plannerFoodSearch" placeholder="Search foods…" autocomplete="off">
     </div>
     <div class="modal-body" id="plannerFoodResults"></div>
+  </div>
+</div>
+
+<!-- EDIT PROFILE MODAL -->
+<div class="modal-ov" id="editProfileModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-ttl">Edit Profile</div>
+    <div class="modal-body">
+      <div class="um-lbl">Name</div>
+      <input class="fi fi-full" id="editProfName" placeholder="Your name" style="margin-bottom:0.65rem;">
+      <div class="um-lbl">Tag line</div>
+      <input class="fi fi-full" id="editProfTag" placeholder="e.g. Polynesian Athlete Protocol" style="margin-bottom:0.65rem;">
+      <div class="um-lbl" style="margin-bottom:0.4rem;">Avatar Color</div>
+      <div id="editColorRow" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0.85rem;"></div>
+      <button class="btn-gold" onclick="saveEditProfile()">Save Changes</button>
+      <button class="btn-outline" onclick="closeEditProfile()" style="margin-top:0.35rem;">Cancel</button>
+    </div>
   </div>
 </div>
 
@@ -3855,11 +3879,89 @@ function renderPeople(){
       <div class="ppl-name">${u.name}</div>
       <div class="ppl-sub">${u.goals.calories} cal goal</div>
       <div class="ppl-cal">${cal} kcal today</div>
-      ${u.id!=='u_filipe'?`<button class="ppl-del" onclick="event.stopPropagation();delUser('${u.id}')">remove</button>`:''}
+      <div style="display:flex;gap:0.35rem;margin-top:0.4rem;">
+        <button class="ppl-edit-btn" onclick="event.stopPropagation();switchUser('${u.id}');openEditProfile()" style="flex:1;font-family:var(--font-d);font-size:0.58rem;font-weight:700;letter-spacing:0.06em;padding:4px 0;border-radius:7px;background:rgba(247,204,75,0.1);border:1px solid rgba(247,204,75,0.2);color:var(--gold);cursor:pointer;">✏️ Edit</button>
+        ${u.id!=='u_filipe'?`<button onclick="event.stopPropagation();delUser('${u.id}')" style="flex:1;font-family:var(--font-d);font-size:0.58rem;font-weight:700;letter-spacing:0.06em;padding:4px 0;border-radius:7px;background:rgba(245,86,74,0.08);border:1px solid rgba(245,86,74,0.2);color:var(--red);cursor:pointer;">🗑 Remove</button>`:''}
+      </div>
     </div>`;
   }).join('');
 }
 function delUser(uid){if(uid===ST.activeUser){showToast('Switch users first','var(--red)');return;}if(confirm('Remove this person?')){delete ST.users[uid];save();renderPeople();renderUserBar();showToast('Removed');}}
+
+// ══════════════════════════════════════════════
+// EDIT PROFILE
+// ══════════════════════════════════════════════
+let editProfileColor = null;
+
+function openEditProfile() {
+  const u = AU();
+  editProfileColor = u.color;
+  const nameEl = document.getElementById('editProfName');
+  const tagEl  = document.getElementById('editProfTag');
+  if (nameEl) nameEl.value = u.name;
+  if (tagEl)  tagEl.value  = u.tag || '';
+  // Build color swatches
+  const row = document.getElementById('editColorRow');
+  if (row) {
+    row.innerHTML = AV_COLORS.map(col =>
+      `<div onclick="pickEditColor('${col}',this)"
+        style="width:32px;height:32px;border-radius:50%;background:${col};cursor:pointer;
+               border:3px solid ${col===u.color?'#fff':'transparent'};
+               box-shadow:${col===u.color?'0 0 0 2px '+col:'none'};
+               transition:all 0.15s;flex-shrink:0;"
+        data-col="${col}"></div>`
+    ).join('');
+  }
+  document.getElementById('editProfileModal').classList.add('open');
+  setTimeout(() => nameEl?.focus(), 300);
+}
+
+function pickEditColor(col, el) {
+  editProfileColor = col;
+  document.querySelectorAll('#editColorRow [data-col]').forEach(s => {
+    const c = s.dataset.col;
+    s.style.border = `3px solid ${c===col?'#fff':'transparent'}`;
+    s.style.boxShadow = c===col ? `0 0 0 2px ${col}` : 'none';
+  });
+}
+
+function saveEditProfile() {
+  const u = AU();
+  const newName = (document.getElementById('editProfName')?.value || '').trim();
+  const newTag  = (document.getElementById('editProfTag')?.value  || '').trim();
+  if (!newName) { showToast('Name cannot be empty', 'var(--red)'); return; }
+  u.name  = newName;
+  u.tag   = newTag || 'NutriTrack Pro Member';
+  u.color = editProfileColor || u.color;
+  save();
+  closeEditProfile();
+  renderProfile();
+  renderUserBar();
+  renderHeaderAvatars();
+  showToast('✅ Profile updated!');
+}
+
+function closeEditProfile() {
+  document.getElementById('editProfileModal')?.classList.remove('open');
+}
+
+function deleteCurrentProfile() {
+  const u = AU();
+  if (u.id === 'u_filipe') { showToast("Can't delete the main profile", 'var(--red)'); return; }
+  if (!confirm(`Delete ${u.name}'s profile? All their data will be lost permanently.`)) return;
+  // Switch to filipe first
+  ST.activeUser = 'u_filipe';
+  delete ST.users[u.id];
+  save();
+  renderAll();
+  showScreen('people');
+  showToast(`🗑 ${u.name}'s profile deleted`);
+}
+
+// Close edit modal on backdrop tap
+document.getElementById('editProfileModal')?.addEventListener('click', e => {
+  if (e.target === document.getElementById('editProfileModal')) closeEditProfile();
+});
 
 // ══════════════════════════════════════════════
 // ADD USER
@@ -3906,8 +4008,9 @@ function renderProfile(){
   document.getElementById('gWat').textContent=(g.water||128)+' oz';
   document.getElementById('gSW').textContent=g.startWeight+' lbs';
   document.getElementById('gGW').textContent=g.goalWeight+' lbs';
-  
-  // Body fat estimate (Navy formula) if we have waist+neck+(hips for women)
+  // Show delete button only for non-Filipe users
+  const delBtn = document.getElementById('profDeleteBtn');
+  if (delBtn) delBtn.style.display = u.id === 'u_filipe' ? 'none' : 'block';
   renderBodyFatEstimate(u);
 }
 
