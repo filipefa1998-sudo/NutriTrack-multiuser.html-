@@ -1541,6 +1541,128 @@ body::after{
     </div>
   </div>
 </div>
+<!-- ══════════ MODALS ══════════ -->
+
+<!-- ADD FOOD MODAL -->
+<div class="modal-ov" id="addFoodModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-ttl">Add to <span id="addFoodMealLabel"></span> <span class="ai-badge">✦ AI</span>
+      <button class="scan-btn" id="scanBtn" onclick="toggleScanner()" title="Barcode Scanner">📷</button>
+    </div>
+    <div id="scannerSection" style="display:none;padding:0 1rem;margin-bottom:0.5rem;">
+      <div class="scanner-wrap">
+        <video id="scannerVideo" autoplay playsinline muted></video>
+        <div class="scan-status" id="scanStatus">Point camera at barcode</div>
+      </div>
+      <button class="stop-scan-btn" onclick="stopScanner()">✕ Stop Scanner</button>
+    </div>
+    <div style="padding:0 1rem 0.5rem;">
+      <input class="srch-in" id="foodSearch" placeholder="Search foods or describe a meal…" autocomplete="off">
+    </div>
+    <div class="modal-body" id="searchResults"></div>
+  </div>
+</div>
+
+<!-- PORTION PICKER -->
+<div class="modal-ov" id="portionOv">
+  <div class="modal-sheet" style="padding-bottom:1.5rem;">
+    <div class="modal-handle"></div>
+    <div class="modal-ttl" id="pTitle">Food Name</div>
+    <div style="padding:0 1rem 0.75rem;">
+      <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.5rem;" id="pMeta">per serving</div>
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+        <label style="font-size:0.75rem;color:var(--muted);">Servings</label>
+        <input class="fi" id="pIn" type="number" value="1" min="0.25" step="0.25" style="width:80px;" oninput="updatePortionPreview()">
+        <span style="font-size:0.72rem;color:var(--muted);" id="pServ"></span>
+      </div>
+      <div id="pQty" style="background:var(--surface);border-radius:var(--r3);padding:0.65rem;font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;"></div>
+      <button class="btn-gold" onclick="confirmPortion()">Add to Diary</button>
+      <button class="btn-outline" onclick="closePortion()" style="margin-top:0.35rem;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ACTIVITY MODAL -->
+<div class="modal-ov" id="actModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-ttl">Log Activity</div>
+    <div class="modal-body">
+      <div id="actTypes" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.75rem;"></div>
+      <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
+        <div style="flex:1"><div class="um-lbl">Duration (min)</div><input class="fi" id="actDuration" type="number" placeholder="30" style="width:100%;" oninput="updateActPreview()"></div>
+        <div style="flex:1"><div class="um-lbl">Steps (optional)</div><input class="fi" id="actStepsIn" type="number" placeholder="0" style="width:100%;"></div>
+      </div>
+      <div id="actCalPreview" style="display:none;background:rgba(61,214,140,0.1);border:1px solid rgba(61,214,140,0.25);border-radius:8px;padding:0.6rem 0.75rem;margin-bottom:0.75rem;font-family:var(--font-d);font-size:0.82rem;color:var(--green);">
+        Est. burn: <span id="actCalPrevVal">0</span> kcal
+      </div>
+      <button class="btn-gold" onclick="logActivity()">Log Activity</button>
+      <button class="btn-outline" onclick="closeActModal()" style="margin-top:0.35rem;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECIPE CREATOR MODAL -->
+<div class="modal-ov" id="recipeModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-ttl" id="recipeModalTitle">Create Recipe</div>
+    <div class="modal-body">
+      <div class="um-lbl">Recipe Name</div>
+      <input class="fi fi-full" id="recipeName" placeholder="My recipe name" style="margin-bottom:0.5rem;">
+      <div class="um-lbl">Servings</div>
+      <input class="fi" id="recipeServings" type="number" value="1" min="1" style="width:80px;margin-bottom:0.65rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
+        <div class="um-lbl" style="margin:0;">Ingredients</div>
+        <button onclick="addIngredientRow()" style="font-size:0.65rem;font-family:var(--font-d);font-weight:700;padding:3px 9px;border-radius:100px;background:rgba(245,200,66,0.12);border:1px solid rgba(245,200,66,0.25);color:var(--gold);cursor:pointer;">+ Add</button>
+      </div>
+      <div id="ingrList" style="margin-bottom:0.65rem;"></div>
+      <div id="recipeTotals" style="background:var(--surface);border-radius:var(--r3);padding:0.65rem;margin-bottom:0.75rem;display:none;">
+        <div style="font-size:0.72rem;color:var(--muted);margin-bottom:3px;">Per serving</div>
+        <div id="recipeTotalCal" style="font-family:var(--font-d);font-size:0.9rem;font-weight:700;color:var(--gold);"></div>
+        <div id="recipeTotalMacros" style="font-size:0.68rem;color:var(--muted);"></div>
+      </div>
+      <button class="btn-gold" onclick="saveRecipe()">Save Recipe</button>
+      <button class="btn-outline" onclick="closeRecipeModal()" style="margin-top:0.35rem;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD USER MODAL -->
+<div class="modal-ov" id="userModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-ttl">Add Person</div>
+    <div class="modal-body">
+      <div class="um-lbl">Name</div>
+      <input class="fi fi-full" id="newName" placeholder="Name" style="margin-bottom:0.5rem;">
+      <div class="um-lbl">Color</div>
+      <div id="colorRow" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0.65rem;"></div>
+      <div class="supp-form-grid" style="margin-bottom:0.5rem;">
+        <div><div class="um-lbl" style="font-size:0.58rem;">Daily Calories</div><input class="fi" id="umCal" type="number" placeholder="2000" style="width:100%;"></div>
+        <div><div class="um-lbl" style="font-size:0.58rem;">Protein (g)</div><input class="fi" id="umPro" type="number" placeholder="150" style="width:100%;"></div>
+        <div><div class="um-lbl" style="font-size:0.58rem;">Carbs (g)</div><input class="fi" id="umCarb" type="number" placeholder="200" style="width:100%;"></div>
+        <div><div class="um-lbl" style="font-size:0.58rem;">Fat (g)</div><input class="fi" id="umFat" type="number" placeholder="65" style="width:100%;"></div>
+      </div>
+      <button class="btn-gold" onclick="createUser()">Add Person</button>
+      <button class="btn-outline" onclick="closeUserModal()" style="margin-top:0.35rem;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PLANNED FOOD MODAL -->
+<div class="modal-ov" id="plannerFoodModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-ttl" id="plannerFoodTitle">Plan Meal</div>
+    <div style="padding:0 1rem 0.5rem;">
+      <input class="srch-in" id="plannerFoodSearch" placeholder="Search foods…" autocomplete="off">
+    </div>
+    <div class="modal-body" id="plannerFoodResults"></div>
+  </div>
+</div>
+
 <!-- BOTTOM NAV -->
 <div id="reminderBanner"></div>
 <!-- MORE DRAWER OVERLAY -->
@@ -2719,7 +2841,7 @@ function showGoalRecalcNudge(uid, currentW, delta) {
   const nudge = document.createElement('div');
   nudge.id = 'tdeeNudgeCard';
   nudge.style.cssText = 'margin:0 1rem 0.65rem;background:rgba(61,214,140,0.08);border:1px solid rgba(61,214,140,0.25);border-radius:12px;padding:0.85rem 1rem;';
-  nudge.innerHTML = \`
+  nudge.innerHTML = `
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;">
       <div>
         <div style="font-family:var(--font-d);font-size:0.8rem;font-weight:700;color:var(--green);margin-bottom:3px;">
@@ -2741,7 +2863,7 @@ function showGoalRecalcNudge(uid, currentW, delta) {
         </div>
       </div>
     </div>
-  \`;
+  `;
   // Insert before the bento grid
   const bentoGrid = document.querySelector('.bento-grid');
   if (bentoGrid) bentoGrid.parentNode.insertBefore(nudge, bentoGrid);
@@ -2796,15 +2918,6 @@ function renderInsight(uid) {
 // ══════════════════════════════════════════════
 let diaryOffset=0, plannerDayOffset=0;
 
-function showScreen(name) {
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('screen-'+name).classList.add('active');
-  const nb=document.getElementById('nav-'+name);
-  if(nb) nb.classList.add('active');
-  const fn={home:renderHome,diary:renderDiary,recipes:renderRecipes,planner:renderPlanner,progress:renderProgress,people:renderPeople,profile:renderProfile};
-  if(fn[name]) fn[name]();
-}
 
 function renderAll() {
   renderUserBar();
@@ -2813,13 +2926,6 @@ function renderAll() {
   if(sc) { const id=sc.id.replace('screen-',''); const fn={home:renderHome,diary:renderDiary,recipes:renderRecipes,planner:renderPlanner,progress:renderProgress,people:renderPeople,profile:renderProfile}; if(fn[id])fn[id](); }
 }
 
-function renderHeaderAvatars() {
-  const u=AU();
-  ['headerAv','diaryAv','recipesAv','plannerAv','progressAv'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el){el.style.background=u.color;el.textContent=ini(u.name);}
-  });
-}
 
 // ══════════════════════════════════════════════
 // USER BAR
@@ -2837,43 +2943,6 @@ function renderUserBar() {
 // ══════════════════════════════════════════════
 // HOME
 // ══════════════════════════════════════════════
-function renderHome() {
-  const u=AU(); const key=dk();
-  document.getElementById('todayLabel').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-  const m=sumMacros(u.id,key); const g=u.goals;
-  const burn=sumActBurn(u.id,key); const rem=Math.max(0,g.calories-m.cal+burn);
-  // Ring
-  const circ=283, off=circ-(circ*pct(m.cal,g.calories)/100);
-  document.getElementById('calRing').style.strokeDashoffset=off;
-  document.getElementById('ringNum').textContent=m.cal;
-  document.getElementById('ringGoal').textContent='/ '+g.calories;
-  // Macros
-  [{id:'bP',val:m.p,max:g.protein,vid:'vP',unit:'g'},{id:'bC',val:m.c,max:g.carbs,vid:'vC',unit:'g'},{id:'bF',val:m.f,max:g.fat,vid:'vF',unit:'g'},{id:'bFb',val:m.fb,max:g.fiber,vid:'vFb',unit:'g'}].forEach(x=>{
-    document.getElementById(x.id).style.width=pct(x.val,x.max)+'%';
-    document.getElementById(x.vid).textContent=x.val+'/'+x.max+x.unit;
-  });
-  // Stats
-  document.getElementById('qRem').textContent=rem;
-  document.getElementById('qBurn').textContent=burn;
-  document.getElementById('qNet').textContent=Math.max(0,g.calories+burn-m.cal);
-  document.getElementById('qStrk').textContent=calcStreak(u.id)+'🔥';
-  // Insight
-  renderInsight(u.id);
-
-  // Vitamin mini panel
-  const vitSum = getVitaminHomeSummary(u.id);
-  const vitPanel = document.getElementById('vitHomePanel');
-  if (vitPanel) vitPanel.innerHTML = vitSum;
-
-  // AI weekly coach (non-blocking)
-  setTimeout(() => renderWeeklyCoach(u.id), 1200);
-  // Water
-  renderWater(u.id, key);
-  // Activity
-  renderActivitySection(u.id, key);
-  // Meals
-  renderMeals(u.id, key, 'mealsContainer', true);
-}
 
 function renderWater(uid, key) {
   const d=getDayData(uid,key); const u=ST.users[uid]; const oz=d.water||0; const goal=u.goals.water||128;
@@ -2887,11 +2956,6 @@ function renderWater(uid, key) {
     div.onclick=()=>addWater((i+1)*8-oz);
     cups.appendChild(div);
   }
-}
-function addWater(oz) {
-  const u=AU(); const key=dk(); const d=getDayData(u.id,key);
-  d.water=Math.max(0,Math.min(300,(d.water||0)+oz));
-  save(); renderWater(u.id,key); document.getElementById('waterDisp').textContent=d.water;
 }
 
 function renderActivitySection(uid, key) {
@@ -2913,32 +2977,6 @@ function deleteActivity(uid,key,idx) {
   getDayActivities(uid,key).splice(idx,1); save(); renderHome();
 }
 
-function renderMeals(uid, key, containerId, withDelete=false) {
-  const u=ST.users[uid]; const container=document.getElementById(containerId);
-  if(!container)return;
-  container.innerHTML='';
-  const d=getDayData(uid,key);
-  MEALS.forEach((meal,mi)=>{
-    const items=d.meals[meal]||[]; const mCal=items.reduce((a,i)=>a+i.cal,0);
-    const sec=document.createElement('div'); sec.className='meal-sec';
-    sec.innerHTML=`
-      <div class="meal-hdr">
-        <div class="meal-hdr-l"><div class="meal-ico" style="background:${MEAL_COLORS[mi]}20">${MEAL_ICONS[mi]}</div><div><div class="meal-ttl">${meal}</div><div class="meal-kcal">${mCal} kcal</div></div></div>
-        <button class="meal-add" onclick="openAddFood('${meal}','${key}','${uid}')">+</button>
-      </div>
-      <div>
-        ${items.length===0?`<div style="padding:.35rem 1rem .35rem 2.85rem;font-size:0.72rem;color:var(--muted2);">Tap + to add food</div>`:''}
-        ${items.map((item,ii)=>`
-          <div class="food-row">
-            <div style="flex:1"><div class="food-row-name">${item.name}</div><div class="food-row-sub">${item.serving} · P:${item.protein}g C:${item.carbs}g F:${item.fat}g</div></div>
-            <div class="food-row-cal">${item.cal}</div>
-            ${withDelete?`<button class="food-row-del" onclick="deleteFood('${uid}','${key}','${meal}',${ii})">✕</button>`:''}
-          </div>`).join('')}
-        <div class="meal-bar"><div class="meal-bar-fill" style="width:${pct(mCal,(u.goals.calories||2800)/MEALS.length)}%;background:${MEAL_COLORS[mi]}"></div></div>
-      </div>`;
-    container.appendChild(sec);
-  });
-}
 function deleteFood(uid,key,meal,idx) {
   getDayData(uid,key).meals[meal].splice(idx,1); save(); renderHome();
 }
@@ -5042,6 +5080,132 @@ function renderHeaderAvatars() {
 // ══════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════
+
+// ══════════════════════════════════════════════
+// SMART REMINDERS
+// ══════════════════════════════════════════════
+function checkReminders() {
+  const u = AU(); const h = new Date().getHours(); const key = dk();
+  const d = getDayData(u.id, key);
+  const banner = document.getElementById('reminderBanner');
+  if (!banner) return;
+  let reminder = null;
+  const bfLogged = (d.meals?.Breakfast||[]).length > 0;
+  const lunchLogged = (d.meals?.Lunch||[]).length > 0;
+  const dinnerLogged = (d.meals?.Dinner||[]).length > 0;
+  const water = d.water || 0;
+  const m = sumMacros(u.id, key);
+  if (h >= 9 && h < 11 && !bfLogged) {
+    reminder = {icon:'🍳', msg:"Good morning! You haven't logged breakfast yet.", color:'rgba(245,200,66,0.12)', border:'rgba(245,200,66,0.3)'};
+  } else if (h >= 13 && h < 15 && !lunchLogged) {
+    reminder = {icon:'🍗', msg:"It's past noon — don't forget to log lunch!", color:'rgba(61,214,140,0.1)', border:'rgba(61,214,140,0.3)'};
+  } else if (h >= 20 && !dinnerLogged) {
+    reminder = {icon:'🍽️', msg:"Evening — log your dinner to complete today's diary.", color:'rgba(77,157,224,0.1)', border:'rgba(77,157,224,0.3)'};
+  } else if (water < 64 && h >= 14) {
+    reminder = {icon:'💧', msg:`Only ${water}oz water logged. You need ${(u.goals.water||128)-water}oz more today.`, color:'rgba(77,157,224,0.08)', border:'rgba(77,157,224,0.25)'};
+  } else if (m.p < u.goals.protein * 0.4 && h >= 15) {
+    reminder = {icon:'💪', msg:`Only ${m.p}g of ${u.goals.protein}g protein logged. Front-load that protein!`, color:'rgba(61,214,140,0.08)', border:'rgba(61,214,140,0.25)'};
+  }
+  if (reminder) {
+    banner.innerHTML = `<div class="reminder-banner" style="background:${reminder.color};border:1px solid ${reminder.border};" onclick="document.getElementById('reminderBanner').innerHTML=''">
+      <div class="reminder-banner-icon">${reminder.icon}</div>
+      <div class="reminder-banner-text">${reminder.msg}</div>
+      <div class="reminder-banner-dismiss">✕</div>
+    </div>`;
+  } else {
+    banner.innerHTML = '';
+  }
+}
+setInterval(checkReminders, 300000);
+
+// ══════════════════════════════════════════════
+// BODY MEASUREMENTS
+// ══════════════════════════════════════════════
+let activeMeasureTab = 'waist';
+
+function logMeasurements() {
+  const u = AU();
+  if (!u.measurements) u.measurements = [];
+  const vals = {
+    waist: parseFloat(document.getElementById('mWaist')?.value)||null,
+    chest: parseFloat(document.getElementById('mChest')?.value)||null,
+    hips:  parseFloat(document.getElementById('mHips')?.value)||null,
+    neck:  parseFloat(document.getElementById('mNeck')?.value)||null,
+    arm:   parseFloat(document.getElementById('mArm')?.value)||null,
+    thigh: parseFloat(document.getElementById('mThigh')?.value)||null,
+    date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+    ts: Date.now()
+  };
+  const hasAny = MEASURE_KEYS.some(k => vals[k] !== null);
+  if (!hasAny) { showToast('Enter at least one measurement', 'var(--red)'); return; }
+  u.measurements.unshift(vals);
+  save();
+  ['mWaist','mChest','mHips','mNeck','mArm','mThigh'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+  renderMeasurements();
+  showToast('📏 Measurements saved!');
+}
+
+function renderMeasurements() {
+  const u = AU();
+  const measurements = u.measurements || [];
+  const tabsEl = document.getElementById('measureTabs');
+  if (tabsEl) tabsEl.innerHTML = MEASURE_KEYS.map((k,i) =>
+    `<div class="mtab ${k===activeMeasureTab?'active':''}" onclick="activeMeasureTab='${k}';renderMeasurements()">${MEASURE_LABELS[i]}</div>`).join('');
+  const histEl = document.getElementById('measureHistory');
+  const entries = measurements.filter(m => m[activeMeasureTab] !== null && m[activeMeasureTab] !== undefined);
+  if (!entries.length) {
+    if (histEl) histEl.innerHTML = `<div class="empty-st" style="padding:1rem;"><span class="empty-ico">📏</span>No ${activeMeasureTab} measurements yet.</div>`;
+    renderBodyFatEstimate(u);
+    return;
+  }
+  const latest = entries[0];
+  const prev = entries[1];
+  const diff = prev ? (latest[activeMeasureTab] - prev[activeMeasureTab]).toFixed(1) : null;
+  const hero = document.querySelector('.measure-hero');
+  if (hero) hero.innerHTML = `
+    <div class="measure-hero-lbl">${MEASURE_LABELS[MEASURE_KEYS.indexOf(activeMeasureTab)]}</div>
+    <div class="measure-hero-val">${latest[activeMeasureTab]}"${diff !== null ? `<span style="font-size:0.9rem;margin-left:6px;color:${parseFloat(diff)<0?'var(--green)':parseFloat(diff)>0?'var(--red)':'var(--muted)'}">${parseFloat(diff)<0?'↓':'↑'}${Math.abs(diff)}"</span>` : ''}</div>
+    <div class="measure-hero-lbl">Latest measurement</div>`;
+  if (histEl) histEl.innerHTML = `<div class="measure-history">` + entries.map((e,i) => {
+    const p = entries[i+1];
+    let diffStr = '';
+    if (p) { const d=(e[activeMeasureTab]-p[activeMeasureTab]).toFixed(1); diffStr=`<span style="color:${parseFloat(d)<0?'var(--green)':parseFloat(d)>0?'var(--red)':'var(--muted)'};">${parseFloat(d)<0?'↓':'↑'}${Math.abs(d)}"</span>`; }
+    return `<div class="mhist-row"><div class="mhist-date">${e.date}</div><div class="mhist-val">${e[activeMeasureTab]}"</div>${diffStr}<button class="mhist-del" onclick="delMeasurement(${i})">✕</button></div>`;
+  }).join('') + '</div>';
+  renderBodyFatEstimate(u);
+}
+
+function renderBodyFatEstimate(u) {
+  const m = (u.measurements || [])[0];
+  const weights = u.weights || [];
+  const bfEl = document.getElementById('bodyFatEstimate');
+  if (!bfEl) return;
+  if (!m || !m.waist || !m.neck || !weights.length) { bfEl.innerHTML = ''; return; }
+  const heightIn = 70;
+  const weightLbs = weights[0].weight;
+  const bf = 86.010 * Math.log10(m.waist - m.neck) - 70.041 * Math.log10(heightIn) + 36.76;
+  const bfRound = Math.max(5, Math.min(60, Math.round(bf * 10) / 10));
+  const leanMass = Math.round(weightLbs * (1 - bfRound/100));
+  const fatMass = Math.round(weightLbs * bfRound/100);
+  const bfColor = bfRound < 15 ? 'var(--green)' : bfRound < 25 ? 'var(--gold)' : 'var(--red)';
+  bfEl.innerHTML = `
+    <div class="sec" style="padding:0;margin-bottom:0.4rem;">Body Fat Estimate (Navy Formula)</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r3);padding:0.85rem;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;text-align:center;">
+        <div><div style="font-family:var(--font-d);font-size:1.5rem;font-weight:700;color:${bfColor}">${bfRound}%</div><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;">Body Fat</div></div>
+        <div><div style="font-family:var(--font-d);font-size:1.5rem;font-weight:700;color:var(--green)">${leanMass}</div><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;">Lean lbs</div></div>
+        <div><div style="font-family:var(--font-d);font-size:1.5rem;font-weight:700;color:var(--red)">${fatMass}</div><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;">Fat lbs</div></div>
+      </div>
+      <div style="font-size:0.65rem;color:var(--muted2);text-align:center;margin-top:0.5rem;">Estimated · requires waist + neck measurements</div>
+    </div>`;
+}
+
+function delMeasurement(i) {
+  AU().measurements.splice(i,1); save(); renderMeasurements();
+}
+
 initState();
 renderUserBar();
 renderHeaderAvatars();
