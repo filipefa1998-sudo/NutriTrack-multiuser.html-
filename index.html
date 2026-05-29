@@ -1622,7 +1622,11 @@ body::after{
         <input class="fi" id="pIn" type="number" value="1" min="0.25" step="0.25" style="width:80px;" oninput="updatePortionPreview()">
         <span style="font-size:0.72rem;color:var(--muted);" id="pServ"></span>
       </div>
-      <div id="pQty" style="background:var(--surface);border-radius:var(--r3);padding:0.65rem;font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;"></div>
+      <div style="background:var(--surface);border-radius:var(--r3);padding:0.75rem;margin-bottom:0.75rem;">
+        <div style="font-family:var(--font-d);font-weight:700;font-size:1.7rem;line-height:1;color:var(--gold);"><span id="pCalPrev">0</span> <span style="font-size:0.7rem;color:var(--muted);font-family:var(--font-b);font-weight:400;">cal</span></div>
+        <div id="pMacroPrev" style="font-size:0.78rem;color:var(--text);margin-top:0.45rem;"></div>
+        <div id="pMicroPrev" style="font-size:0.7rem;color:var(--muted);margin-top:0.25rem;"></div>
+      </div>
       <button class="btn-gold" onclick="confirmPortion()">Add to Diary</button>
       <button class="btn-outline" onclick="closePortion()" style="margin-top:0.35rem;">Cancel</button>
     </div>
@@ -3031,7 +3035,7 @@ function renderWater(uid, key) {
   const d=getDayData(uid,key); const u=ST.users[uid]; const oz=d.water||0; const goal=u.goals.water||128;
   document.getElementById('waterDisp').textContent=oz;
   document.getElementById('waterGoalLbl').textContent='/ '+goal+' oz';
-  const cups=document.getElementById('waterCups'); cups.innerHTML='';
+  const cups=document.getElementById('waterCups'); if(!cups){updateWaterWave(oz,goal);return;} cups.innerHTML='';
   for(let i=0;i<16;i++){
     const filled=(i+1)*8<=oz;
     const div=document.createElement('div');
@@ -3544,6 +3548,7 @@ function renderPlanner(){
   });
 }
 function openPlannerFood(meal,key,uid){
+  curTarget={meal,key,uid,forPlanner:true};
   document.getElementById('plannerFoodTitle').textContent='Plan '+meal;
   document.getElementById('plannerFoodSearch').value='';
   document.getElementById('plannerFoodResults').innerHTML=FOOD_DB.slice(0,8).map(f=>`<div class="res-item" onclick='addPlannedFood("${uid}","${key}","${meal}",${JSON.stringify(f).replace(/'/g,"\\'")})'><div class="res-emoji">${f.emoji}</div><div class="res-info"><div class="res-name">${f.name}</div><div class="res-meta">${f.serving}</div></div><div class="res-cal">${f.cal}</div></div>`).join('');
@@ -3584,11 +3589,11 @@ document.getElementById('plannerFoodModal').addEventListener('click',e=>{if(e.ta
 // PROGRESS
 // ══════════════════════════════════════════════
 function logWeight(){
-  const v=parseFloat(document.getElementById('weightIn').value);
+  const v=parseFloat(document.getElementById('weightInput').value);
   if(!v||v<50||v>700){showToast('Enter a valid weight','var(--red)');return;}
   const u=AU(); if(!u.weights)u.weights=[];
   u.weights.unshift({weight:v,date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),ts:Date.now()});
-  save(); document.getElementById('weightIn').value=''; renderProgress(); showToast('⚖️ Weight logged!');
+  save(); document.getElementById('weightInput').value=''; renderProgress(); showToast('⚖️ Weight logged!');
 }
 function renderProgress(){
   const u=AU(); const w=u.weights||[]; const g=u.goals;
