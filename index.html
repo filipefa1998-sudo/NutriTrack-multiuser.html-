@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>NutriTrack Pro</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0a0d12">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NutriTrack">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Satoshi:wght@300;400;500;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -1139,6 +1147,28 @@ body::after{
   }
   body::after{animation:none!important;}
 }
+
+/* ══ DESKTOP / WIDE SCREENS: center the app as a phone-width column ══ */
+@media (min-width:600px){
+  body{
+    max-width:440px;
+    margin-inline:auto;
+    min-height:100vh;
+    box-shadow:0 0 0 1px var(--border), 0 24px 70px rgba(0,0,0,0.55);
+  }
+  /* Fixed elements are viewport-relative, so re-center them to the column width */
+  .bottom-nav{
+    left:50%; right:auto;
+    width:100%; max-width:440px;
+    transform:translateX(-50%);
+  }
+  .more-drawer{
+    left:50%; right:auto;
+    width:100%; max-width:440px;
+    transform:translateX(-50%) translateY(100%);
+  }
+  .more-drawer.open{ transform:translateX(-50%) translateY(0); }
+}
 </style>
 </head>
 <body>
@@ -1794,6 +1824,25 @@ const MEAL_COLORS = ['#f5c842','#3dd68c','#9b72f5','#4d9de0'];
 const AV_COLORS = ['#f5c842','#3dd68c','#f5564a','#4d9de0','#9b72f5','#f5923e','#38c9c9','#e85d8a','#a8e63d','#f5c8a0'];
 const DEFAULT_GOALS = {calories:2800,protein:240,carbs:200,fat:95,fiber:35,water:128,startWeight:400,goalWeight:240};
 const MICRO_GOALS = {sodium:2300,potassium:4700,calcium:1000,iron:18,vitC:90,vitD:20,magnesium:400,zinc:11};
+
+// ══════════════════════════════════════════════
+// AI ENDPOINT CONFIG
+// Leave AI_PROXY_URL = '' to use the built-in proxy (works ONLY inside the Claude app).
+// After deploying the Cloudflare Worker (see nutritrack-ai-proxy.js), paste its URL here
+// to make the AI Coach, AI food search, and AI Photo Analysis work on a public web deploy.
+// ══════════════════════════════════════════════
+const AI_PROXY_URL = ''; // e.g. 'https://nutritrack-ai.yourname.workers.dev'
+
+async function aiComplete(body) {
+  const url = AI_PROXY_URL || 'https://api.anthropic.com/v1/messages';
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!resp.ok) throw new Error('AI request failed: ' + resp.status);
+  return resp.json();
+}
 
 const FOOD_DB = [
   {emoji:'🥚',name:'Eggs (2 whole)',serving:'2 eggs',cal:140,protein:12,carbs:1,fat:10,fiber:0,sodium:140,potassium:138,calcium:50,iron:1.8,vitC:0,vitD:2,magnesium:12,zinc:1.3},
@@ -2507,16 +2556,11 @@ Write exactly 3 sentences:
 Tone: direct, encouraging, no fluff. Like a coach who respects their athlete. Do not use asterisks or markdown. Just plain sentences.`;
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 200,
-        messages: [{role:'user', content: prompt}]
-      })
+    const data = await aiComplete({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 200,
+      messages: [{role:'user', content: prompt}]
     });
-    const data = await resp.json();
     const message = data.content?.[0]?.text?.trim() || 'Unable to generate message. Try again later.';
     const dateStr = new Date().toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
 
@@ -3025,138 +3069,7 @@ function deleteFood(uid,key,meal,idx) {
 // ══════════════════════════════════════════════
 let curTarget=null, pFood=null, scannerActive=false, codeReader=null;
 
-// ══════════════════════════════════════════════
-// SELF-CONTAINED EAN-13 / UPC-A / EAN-8 DECODER
-// Pure JS — no library, no CDN, works fully offline
-// ══════════════════════════════════════════════
-const EAN = (() => {
-  // L-code digit patterns (7 modules each)
-  const L = ['0001101','0011001','0010011','0111101','0100011','0110001','0101111','0111011','0110111','0001011'];
-  // G-code (inverted L) and R-code (complement of L)
-  const G = L.map(p => p.split('').reverse().join(''));
-  const R = L.map(p => p.split('').map(b=>b==='0'?'1':'0').join(''));
-  // First digit parity patterns for EAN-13
-  const PARITY13 = ['LLLLLL','LLGLGG','LLGGLG','LLGGGL','LGLLGG','LGGLLG','LGGGLL','LGLGLG','LGLGGL','LGGLGL'];
-
-  function matchDigit(bits, tables) {
-    for (let d = 0; d < 10; d++) {
-      for (const tbl of tables) {
-        if (tbl[d] === bits) return {digit: d, code: tbl === L ? 'L' : tbl === G ? 'G' : 'R'};
-      }
-    }
-    return null;
-  }
-
-  function decodeRow(pixels, threshold) {
-    // Convert pixel row to bit string using adaptive threshold
-    const w = pixels.length;
-    const bits = pixels.map(p => p < threshold ? '1' : '0').join('');
-
-    // Find start guard: 101
-    for (let s = 0; s < w - 95; s++) {
-      if (bits[s]==='1' && bits[s+1]==='0' && bits[s+2]==='1') {
-        // Try to decode from position s
-        const result = tryDecode(bits, s);
-        if (result) return result;
-      }
-    }
-    return null;
-  }
-
-  function tryDecode(bits, start) {
-    let pos = start + 3; // skip start guard 101
-    const leftDigits = [], leftCodes = [];
-
-    for (let i = 0; i < 6; i++) {
-      if (pos + 7 > bits.length) return null;
-      const seg = bits.slice(pos, pos+7);
-      const m = matchDigit(seg, [L, G]);
-      if (!m) return null;
-      leftDigits.push(m.digit);
-      leftCodes.push(m.code === 'L' ? 'L' : 'G');
-      pos += 7;
-    }
-
-    // Middle guard: 01010
-    if (bits.slice(pos, pos+5) !== '01010') return null;
-    pos += 5;
-
-    const rightDigits = [];
-    for (let i = 0; i < 6; i++) {
-      if (pos + 7 > bits.length) return null;
-      const seg = bits.slice(pos, pos+7);
-      const m = matchDigit(seg, [R]);
-      if (!m) return null;
-      rightDigits.push(m.digit);
-      pos += 7;
-    }
-
-    // End guard: 101
-    if (bits.slice(pos, pos+3) !== '101') return null;
-
-    // Decode first digit from parity pattern
-    const parity = leftCodes.join('');
-    const firstDigit = PARITY13.indexOf(parity);
-    if (firstDigit < 0) {
-      // Try UPC-A (all L codes = first digit 0)
-      if (parity !== 'LLLLLL') return null;
-    }
-
-    const full = String(firstDigit < 0 ? 0 : firstDigit) + leftDigits.join('') + rightDigits.join('');
-
-    // Validate check digit
-    let sum = 0;
-    for (let i = 0; i < 12; i++) sum += parseInt(full[i]) * (i%2===0 ? 1 : 3);
-    const check = (10 - (sum % 10)) % 10;
-    if (check !== parseInt(full[12])) return null;
-    return full;
-  }
-
-  function sampleRow(imageData, y, w) {
-    const row = [];
-    for (let x = 0; x < w; x++) {
-      const i = (y * w + x) * 4;
-      // Greyscale
-      row.push(Math.round(imageData.data[i]*0.299 + imageData.data[i+1]*0.587 + imageData.data[i+2]*0.114));
-    }
-    return row;
-  }
-
-  function otsuThreshold(pixels) {
-    const hist = new Array(256).fill(0);
-    pixels.forEach(p => hist[p]++);
-    const total = pixels.length;
-    let sum = 0;
-    for (let i = 0; i < 256; i++) sum += i * hist[i];
-    let sumB=0, wB=0, wF=0, varMax=0, thresh=128;
-    for (let t=0; t<256; t++) {
-      wB += hist[t]; if (!wB) continue;
-      wF = total - wB; if (!wF) break;
-      sumB += t * hist[t];
-      const mB=sumB/wB, mF=(sum-sumB)/wF;
-      const v=wB*wF*(mB-mF)*(mB-mF);
-      if (v > varMax) { varMax=v; thresh=t; }
-    }
-    return thresh;
-  }
-
-  return {
-    decode(imageData, w, h) {
-      // Sample multiple horizontal rows across the middle 60% of the image
-      const results = {};
-      for (let r = 0; r < 20; r++) {
-        const y = Math.round(h * 0.2 + (h * 0.6 * r / 20));
-        const row = sampleRow(imageData, y, w);
-        const thresh = otsuThreshold(row);
-        const code = decodeRow(row, thresh);
-        if (code) results[code] = (results[code]||0)+1;
-      }
-      // Return the code that appeared most (stability check)
-      const best = Object.entries(results).sort((a,b)=>b[1]-a[1])[0];
-      return best && best[1] >= 2 ? best[0] : null;
-    }
-  };
-})();
+// (Removed ~130-line hand-rolled EAN decoder — barcode scanning now uses native BarcodeDetector + the ZXing library.)
 
 function openAddFood(meal,key,uid,forPlanner=false) {
   curTarget={meal,key,uid,forPlanner};
@@ -3171,8 +3084,8 @@ document.getElementById('addFoodModal').addEventListener('click',e=>{if(e.target
 
 // ══════════════════════════════════════════════
 // BARCODE SCANNER
-// Uses inline EAN-13/UPC-A decoder (no CDN)
-// + native BarcodeDetector when available
+// + native BarcodeDetector when available (fast path)
+// + ZXing library fallback (covers iOS Safari)
 // + manual barcode entry as always-on fallback
 // ══════════════════════════════════════════════
 let scanStream = null, scanLoop = null, zxingReader = null;
@@ -3351,8 +3264,7 @@ async function searchFood(q) {
   res.innerHTML=(local.length?`<div class="ai-lbl">Database</div>${local.map(resultHTML).join('')}`:'')
     +`<div class="ai-lbl">AI Search <span class="ai-badge">✦ Claude</span></div><div class="loading-dots"><span></span><span></span><span></span></div>${customSection()}`;
   try {
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:`JSON array of 5 foods/drinks matching "${q}". Include restaurant items if relevant. Each object: {emoji,name,serving,cal,protein,carbs,fat,fiber,sodium,potassium,calcium,iron,vitC,magnesium,zinc} all integers except name/emoji/serving. Only raw JSON array, no markdown.`}]})});
-    const data=await resp.json();
+    const data=await aiComplete({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:`JSON array of 5 foods/drinks matching "${q}". Include restaurant items if relevant. Each object: {emoji,name,serving,cal,protein,carbs,fat,fiber,sodium,potassium,calcium,iron,vitC,magnesium,zinc} all integers except name/emoji/serving. Only raw JSON array, no markdown.`}]});
     const text=data.content?.[0]?.text||'[]';
     const foods=JSON.parse(text.replace(/```json|```/g,'').trim());
     const aiHTML=foods.map(f=>`<div class="res-item res-ai" onclick='openPortion(${JSON.stringify(f).replace(/'/g,"\\'")})'><div class="res-emoji">${f.emoji||'🍽️'}</div><div class="res-info"><div class="res-name">${f.name}</div><div class="res-meta">${f.serving||'1 serving'} · P:${f.protein}g C:${f.carbs}g F:${f.fat}g</div></div><div class="res-cal">${f.cal}</div></div>`).join('');
@@ -5333,36 +5245,55 @@ function guessMealByTime() {
   return 'Dinner';
 }
 
+// Downscale a data-URL image to at most maxEdge px on the long side, re-encoded as JPEG.
+// Keeps the API payload small (a raw phone photo is several MB of base64 — slow and costly).
+function downscaleImage(dataUrl, maxEdge = 1024, quality = 0.8) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxEdge || height > maxEdge) {
+        const scale = maxEdge / Math.max(width, height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+      const c = document.createElement('canvas');
+      c.width = width; c.height = height;
+      c.getContext('2d').drawImage(img, 0, 0, width, height);
+      try { resolve(c.toDataURL('image/jpeg', quality)); }
+      catch(e) { resolve(dataUrl); } // fall back to original if canvas is tainted
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
 async function handlePhotoSelect(event) {
   const file = event.target.files && event.target.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = async (e) => {
-    const dataUrl = e.target.result;
+    const originalUrl = e.target.result;
     const preview = document.getElementById('photoPreview');
-    if (preview) { preview.src = dataUrl; preview.style.display = 'block'; }
+    if (preview) { preview.src = originalUrl; preview.style.display = 'block'; }
     const resEl = document.getElementById('photoAnalysisResult');
     const btns = document.getElementById('photoActionBtns');
     if (btns) btns.style.display = 'none';
     if (resEl) resEl.innerHTML = `<div class="ai-lbl">Analyzing <span class="ai-badge">✦ Claude</span></div><div class="loading-dots"><span></span><span></span><span></span></div>`;
 
-    const base64 = dataUrl.split(',')[1];
-    const mediaType = (file.type && file.type.indexOf('image/') === 0) ? file.type : 'image/jpeg';
+    // Resize before upload to keep the request small and fast
+    const scaledUrl = await downscaleImage(originalUrl, 1024, 0.8);
+    const base64 = scaledUrl.split(',')[1];
 
     try {
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          model:'claude-sonnet-4-20250514',
-          max_tokens:1024,
-          messages:[{ role:'user', content:[
-            { type:'image', source:{ type:'base64', media_type:mediaType, data:base64 } },
-            { type:'text', text:`Identify each distinct food/drink in this meal photo and estimate its nutrition for the portion shown. Respond with ONLY a raw JSON array (no markdown, no commentary). Each object: {emoji,name,serving,cal,protein,carbs,fat,fiber,sodium,potassium,calcium,iron,vitC}. name/emoji/serving are strings; every other value is an integer. If no food is visible, return [].` }
-          ]}]
-        })
+      const data = await aiComplete({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1024,
+        messages:[{ role:'user', content:[
+          { type:'image', source:{ type:'base64', media_type:'image/jpeg', data:base64 } },
+          { type:'text', text:`Identify each distinct food/drink in this meal photo and estimate its nutrition for the portion shown. Respond with ONLY a raw JSON array (no markdown, no commentary). Each object: {emoji,name,serving,cal,protein,carbs,fat,fiber,sodium,potassium,calcium,iron,vitC}. name/emoji/serving are strings; every other value is an integer. If no food is visible, return [].` }
+        ]}]
       });
-      const data = await resp.json();
       const textBlock = (data.content || []).find(b => b.type === 'text');
       const text = (textBlock && textBlock.text) || (data.content && data.content[0] && data.content[0].text) || '[]';
       const foods = JSON.parse(text.replace(/```json|```/g,'').trim());
@@ -5409,7 +5340,7 @@ function renderPhotoFallback() {
   resEl.innerHTML =
     `<div class="ai-lbl">AI analysis unavailable</div>
      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r3);padding:0.85rem;font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:0.6rem;">
-       Photo AI runs only inside the Claude app — it needs the Claude API, which isn't reachable from a public web deploy. You can still log this meal by hand.
+       Couldn't reach the AI service. If this is a public web deploy, make sure the AI proxy URL is set (see AI_PROXY_URL). You can still log this meal by hand.
      </div>
      <button class="btn-gold" onclick="openAddFood(guessMealByTime(), dk(), ST.activeUser)">+ Add Food Manually</button>`;
   const btns = document.getElementById('photoActionBtns');
@@ -5473,6 +5404,14 @@ initPatternStripScroll();
 showScreen('home');
 // Add accents after first render
 setTimeout(addTonganAccents, 400);
+</script>
+<script>
+// Register the service worker (enables install-to-home-screen + offline). Fails silently on unsupported browsers.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
