@@ -1831,7 +1831,7 @@ const MICRO_GOALS = {sodium:2300,potassium:4700,calcium:1000,iron:18,vitC:90,vit
 // After deploying the Cloudflare Worker (see nutritrack-ai-proxy.js), paste its URL here
 // to make the AI Coach, AI food search, and AI Photo Analysis work on a public web deploy.
 // ══════════════════════════════════════════════
-const AI_PROXY_URL = ''; // e.g. 'https://nutritrack-ai.yourname.workers.dev'
+const AI_PROXY_URL = 'https://nutritrack-ai.filipefa1998.workers.dev'; // e.g. 'https://nutritrack-ai.yourname.workers.dev'
 
 async function aiComplete(body) {
   const url = AI_PROXY_URL || 'https://api.anthropic.com/v1/messages';
