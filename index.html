@@ -2051,7 +2051,19 @@ function initState() {
     if (added) save();
   }
 }
-function save() { localStorage.setItem('ntp_v4', JSON.stringify(ST)); }
+function save() {
+  try {
+    localStorage.setItem('ntp_v4', JSON.stringify(ST));
+    return true;
+  } catch (e) {
+    console.error('save() failed:', e);
+    const quota = e && (e.name === 'QuotaExceededError' || e.code === 22 || /quota/i.test(e.message || ''));
+    showToast(quota
+      ? '⚠️ Storage full — change not saved. Delete old progress photos or back up & re-import.'
+      : '⚠️ Could not save your changes. Export a backup now.', 'var(--red)');
+    return false;
+  }
+}
 function AU() { return ST.users[ST.activeUser]; }
 function switchUser(id) { ST.activeUser = id; save(); renderAll(); showToast('Switched to '+ST.users[id].name); }
 
@@ -2764,26 +2776,53 @@ function openAddProgressPhoto() {
   document.getElementById('progressPhotoInput').click();
 }
 
+// Downscale + JPEG-compress a data URL so photos don't blow the localStorage quota
+function compressImage(dataUrl, maxDim, quality) {
+  return new Promise(function (resolve) {
+    const img = new Image();
+    img.onload = function () {
+      let w = img.width, h = img.height;
+      if (w >= h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
+      else if (h > w && h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
+      try {
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(c.toDataURL('image/jpeg', quality));
+      } catch (e) { resolve(dataUrl); }
+    };
+    img.onerror = function () { resolve(dataUrl); };
+    img.src = dataUrl;
+  });
+}
+
 function handleProgressPhoto(event) {
   const file = event.target.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    const u = AU();
-    if (!u.progressPhotos) u.progressPhotos = [];
-    const weights = u.weights || [];
-    const currentWeight = weights[0]?.weight || null;
-    const note = prompt('Add a note (optional, e.g. "After 2 months"):') || '';
-    u.progressPhotos.unshift({
-      dataUrl: e.target.result,
-      date: new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}),
-      weight: currentWeight,
-      note: note.trim(),
-      ts: Date.now()
+    compressImage(e.target.result, 1280, 0.72).then(function (small) {
+      const u = AU();
+      if (!u.progressPhotos) u.progressPhotos = [];
+      const weights = u.weights || [];
+      const currentWeight = weights[0]?.weight || null;
+      const note = prompt('Add a note (optional, e.g. "After 2 months"):') || '';
+      u.progressPhotos.unshift({
+        dataUrl: small,
+        date: new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}),
+        weight: currentWeight,
+        note: note.trim(),
+        ts: Date.now()
+      });
+      // If even the compressed photo overflows storage, undo it so the rest of your data keeps saving.
+      if (save() === false) {
+        u.progressPhotos.shift();
+        showToast('⚠️ Not enough local storage for this photo. Cloud photo storage is coming — back up first.', 'var(--red)');
+        return;
+      }
+      renderPhotoWall();
+      showToast('📸 Progress photo saved!');
     });
-    save();
-    renderPhotoWall();
-    showToast('📸 Progress photo saved!');
   };
   reader.readAsDataURL(file);
   event.target.value = '';
@@ -5418,5 +5457,229 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+<!-- ===================== Firebase Cloud Sync (added) ===================== -->
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-storage-compat.js"></script>
+<script>
+(function () {
+  'use strict';
+  if (typeof firebase === 'undefined') { console.warn('[Sync] Firebase SDK not loaded — running local-only.'); return; }
+
+  var firebaseConfig = {
+    apiKey: "AIzaSyASR_lsSpWPwMySdxza-deNuoscB1ppEnI",
+    authDomain: "nutritrack-2fdfb.firebaseapp.com",
+    projectId: "nutritrack-2fdfb",
+    storageBucket: "nutritrack-2fdfb.firebasestorage.app",
+    messagingSenderId: "711113913631",
+    appId: "1:711113913631:web:19daad7abf804b369f2c2a"
+  };
+  try { firebase.initializeApp(firebaseConfig); }
+  catch (e) { console.error('[Sync] init failed', e); return; }
+
+  var auth = firebase.auth();
+  var db = firebase.firestore();
+  var storage = firebase.storage();
+  var CLIENT = Math.random().toString(36).slice(2);
+  var uid = null, applying = false, unsub = null, pushTimer = null, firstSnap = true;
+
+  function toast(m) { if (typeof showToast === 'function') showToast(m); }
+  function localStamp() { return Number(localStorage.getItem('ntp_updatedAt') || 0); }
+  function setLocalStamp(t) { localStorage.setItem('ntp_updatedAt', String(t)); }
+
+  // Strip base64 photo blobs from the synced copy so the Firestore doc stays well under 1MB.
+  // (New photos upload to Storage and carry a small URL instead — see handleProgressPhoto below.)
+  function buildState() {
+    var clone;
+    try { clone = JSON.parse(JSON.stringify(ST)); } catch (e) { return ST; }
+    if (clone && clone.users) {
+      Object.keys(clone.users).forEach(function (k) {
+        var ph = clone.users[k] && clone.users[k].progressPhotos;
+        if (Array.isArray(ph)) ph.forEach(function (p) {
+          if (p && typeof p.dataUrl === 'string' && p.dataUrl.indexOf('data:') === 0) { p.dataUrl = ''; p.localOnly = true; }
+        });
+      });
+    }
+    return clone;
+  }
+
+  function readFast() { try { return JSON.parse(localStorage.getItem('nt_fast') || 'null'); } catch (e) { return null; } }
+
+  function pushNow() {
+    if (!uid) return;
+    var t = Date.now(); setLocalStamp(t);
+    var payload = { ntp_v4: buildState(), nt_fast: readFast(), updatedAt: t, client: CLIENT };
+    db.collection('users').doc(uid).set(payload)
+      .catch(function (e) { console.error('[Sync] push failed', e); toast('⚠️ Cloud save failed — working offline.'); });
+  }
+  function pushDebounced() { if (!uid) return; clearTimeout(pushTimer); pushTimer = setTimeout(pushNow, 1200); }
+
+  function applyRemote(data) {
+    if (!data || !data.ntp_v4) return;
+    applying = true;
+    try {
+      ST = data.ntp_v4;
+      localStorage.setItem('ntp_v4', JSON.stringify(ST));
+      if (data.nt_fast) localStorage.setItem('nt_fast', JSON.stringify(data.nt_fast));
+      setLocalStamp(data.updatedAt || Date.now());
+      if (typeof renderAll === 'function') renderAll();
+      toast('☁ Synced from your other device.');
+    } catch (e) { console.error('[Sync] apply failed', e); }
+    applying = false;
+  }
+
+  function subscribe() {
+    if (unsub) { unsub(); unsub = null; }
+    firstSnap = true;
+    unsub = db.collection('users').doc(uid).onSnapshot(function (snap) {
+      var data = snap.exists ? snap.data() : null;
+      if (firstSnap) {                       // one-time reconcile on sign-in
+        firstSnap = false;
+        if (!data) { pushNow(); }                            // cloud empty -> seed it
+        else if ((data.updatedAt || 0) > localStamp()) { applyRemote(data); }  // cloud newer -> adopt
+        else { pushNow(); }                                  // local newer -> update cloud
+        return;
+      }
+      if (!data || data.client === CLIENT) return;           // ignore our own echo
+      if ((data.updatedAt || 0) > localStamp()) applyRemote(data);
+    }, function (e) { console.error('[Sync] listen error', e); });
+  }
+
+  // ---- hook the app's persistence so EVERY module syncs through one chokepoint ----
+  var _save = window.save;
+  window.save = function () {
+    var r = _save.apply(this, arguments);
+    setLocalStamp(Date.now());
+    if (uid && !applying) pushDebounced();
+    return r;
+  };
+  if (typeof window.saveFastState === 'function') {
+    var _sfs = window.saveFastState;
+    window.saveFastState = function () {
+      var r = _sfs.apply(this, arguments);
+      setLocalStamp(Date.now());
+      if (uid && !applying) pushDebounced();
+      return r;
+    };
+  }
+
+  // ---- progress photos -> Firebase Storage when signed in (small URL syncs; base64 only offline) ----
+  window.handleProgressPhoto = function (event) {
+    var file = event.target.files[0]; if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      compressImage(e.target.result, 1280, 0.72).then(function (small) {
+        var u = AU(); if (!u.progressPhotos) u.progressPhotos = [];
+        var cw = (u.weights && u.weights[0]) ? u.weights[0].weight : null;
+        var note = prompt('Add a note (optional, e.g. "After 2 months"):') || '';
+        var entry = {
+          dataUrl: small,
+          date: new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
+          weight: cw, note: note.trim(), ts: Date.now()
+        };
+        function finishLocal() {
+          u.progressPhotos.unshift(entry);
+          if (save() === false) { u.progressPhotos.shift(); toast('⚠️ Not enough local storage for this photo.'); return; }
+          if (typeof renderPhotoWall === 'function') renderPhotoWall();
+          toast('📸 Progress photo saved!');
+        }
+        if (uid) {
+          var path = 'users/' + uid + '/photos/' + entry.ts + '.jpg';
+          var ref = storage.ref().child(path);
+          ref.putString(small, 'data_url').then(function () { return ref.getDownloadURL(); })
+            .then(function (url) {
+              entry.dataUrl = url; entry.storagePath = path;
+              u.progressPhotos.unshift(entry); save();
+              if (typeof renderPhotoWall === 'function') renderPhotoWall();
+              toast('📸 Photo saved & synced!');
+            })
+            .catch(function (err) { console.error('[Sync] photo upload failed', err); finishLocal(); });
+        } else { finishLocal(); }
+      });
+    };
+    reader.readAsDataURL(file); event.target.value = '';
+  };
+
+  // ---- minimal sign-in UI (a small pill + a modal) ----
+  var badge = document.createElement('div');
+  badge.id = 'syncBadge';
+  badge.style.cssText = 'position:fixed;z-index:100000;top:calc(env(safe-area-inset-top,0px) + 7px);left:50%;transform:translateX(-50%);' +
+    'font-family:var(--font-d,sans-serif);font-size:10.5px;font-weight:700;letter-spacing:.04em;padding:5px 11px;border-radius:100px;' +
+    'cursor:pointer;border:1px solid;white-space:nowrap;';
+  document.body.appendChild(badge);
+  badge.onclick = openModal;
+
+  function setBadge(on, email) {
+    if (on) {
+      badge.textContent = '☁ Synced';
+      badge.style.color = '#06210f'; badge.style.background = '#2de08f'; badge.style.borderColor = '#2de08f';
+      setTimeout(function () { if (auth.currentUser) badge.style.opacity = '0.45'; }, 3500);
+      badge.onmouseenter = function () { badge.style.opacity = '1'; };
+    } else {
+      badge.textContent = '☁ Sign in to back up';
+      badge.style.opacity = '1';
+      badge.style.color = '#f7cc4b'; badge.style.background = 'rgba(247,204,75,0.12)'; badge.style.borderColor = 'rgba(247,204,75,0.4)';
+    }
+  }
+
+  var modal = null;
+  function buildModal() {
+    modal = document.createElement('div');
+    modal.id = 'syncModal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:100001;display:none;align-items:center;justify-content:center;background:rgba(3,5,8,0.72);padding:20px;';
+    modal.innerHTML =
+      '<div style="width:100%;max-width:340px;background:#0e1319;border:1px solid #1f2e42;border-radius:16px;padding:20px;font-family:var(--font-b,sans-serif);color:#f0f4ff;box-shadow:0 30px 70px rgba(0,0,0,.6);">' +
+        '<div style="font-family:var(--font-d,sans-serif);font-weight:700;font-size:1.1rem;margin-bottom:4px;">Cloud Sync</div>' +
+        '<div id="syncSub" style="font-size:.8rem;color:#5a7090;margin-bottom:14px;line-height:1.4;">Sign in to back up your data and sync it across your phone and laptop.</div>' +
+        '<div id="syncForm">' +
+          '<input id="syncEmail" type="email" placeholder="Email" autocomplete="username" style="width:100%;box-sizing:border-box;margin-bottom:8px;padding:11px;border-radius:9px;border:1px solid #1f2e42;background:#070a0e;color:#f0f4ff;font-size:.9rem;">' +
+          '<input id="syncPass" type="password" placeholder="Password (6+ characters)" autocomplete="current-password" style="width:100%;box-sizing:border-box;margin-bottom:8px;padding:11px;border-radius:9px;border:1px solid #1f2e42;background:#070a0e;color:#f0f4ff;font-size:.9rem;">' +
+          '<div id="syncErr" style="color:#f5564a;font-size:.72rem;min-height:1em;margin-bottom:8px;line-height:1.3;"></div>' +
+          '<button id="syncSignIn" style="width:100%;padding:11px;border:none;border-radius:9px;background:#f7cc4b;color:#000;font-weight:700;font-family:var(--font-d,sans-serif);font-size:.85rem;cursor:pointer;margin-bottom:8px;">Sign in</button>' +
+          '<button id="syncSignUp" style="width:100%;padding:11px;border:1px solid #1f2e42;border-radius:9px;background:none;color:#f0f4ff;font-weight:600;font-size:.8rem;cursor:pointer;">Create account</button>' +
+        '</div>' +
+        '<div id="syncAcct" style="display:none;">' +
+          '<div id="syncEmailLbl" style="font-size:.85rem;margin-bottom:12px;"></div>' +
+          '<button id="syncSignOut" style="width:100%;padding:11px;border:1px solid #1f2e42;border-radius:9px;background:none;color:#f5564a;font-weight:600;font-size:.85rem;cursor:pointer;">Sign out</button>' +
+        '</div>' +
+        '<button id="syncClose" style="width:100%;padding:9px;border:none;background:none;color:#5a7090;font-size:.78rem;cursor:pointer;margin-top:10px;">Close</button>' +
+      '</div>';
+    document.body.appendChild(modal);
+    modal.addEventListener('click', function (ev) { if (ev.target === modal) closeModal(); });
+    document.getElementById('syncClose').onclick = closeModal;
+    document.getElementById('syncSignIn').onclick = function () { doAuth('in'); };
+    document.getElementById('syncSignUp').onclick = function () { doAuth('up'); };
+    document.getElementById('syncSignOut').onclick = function () { auth.signOut(); closeModal(); };
+  }
+  function openModal() { if (!modal) buildModal(); refreshModal(); modal.style.display = 'flex'; }
+  function closeModal() { if (modal) modal.style.display = 'none'; }
+  function refreshModal() {
+    if (!modal) return;
+    var on = !!auth.currentUser;
+    document.getElementById('syncForm').style.display = on ? 'none' : 'block';
+    document.getElementById('syncAcct').style.display = on ? 'block' : 'none';
+    document.getElementById('syncSub').textContent = on ? 'Your data is backed up and syncing.' : 'Sign in to back up your data and sync it across your phone and laptop.';
+    if (on) document.getElementById('syncEmailLbl').textContent = 'Signed in as ' + (auth.currentUser.email || '');
+    var er = document.getElementById('syncErr'); if (er) er.textContent = '';
+  }
+  function doAuth(mode) {
+    var em = document.getElementById('syncEmail').value.trim();
+    var pw = document.getElementById('syncPass').value;
+    var er = document.getElementById('syncErr');
+    if (!em || !pw) { er.textContent = 'Enter your email and password.'; return; }
+    var p = mode === 'up' ? auth.createUserWithEmailAndPassword(em, pw) : auth.signInWithEmailAndPassword(em, pw);
+    p.then(function () { closeModal(); toast('☁ Signed in — syncing your data.'); })
+     .catch(function (e) { er.textContent = (e && e.message) ? e.message.replace('Firebase: ', '') : 'Sign-in failed.'; });
+  }
+
+  auth.onAuthStateChanged(function (user) {
+    if (user) { uid = user.uid; setBadge(true, user.email); subscribe(); }
+    else { uid = null; if (unsub) { unsub(); unsub = null; } setBadge(false); }
+    refreshModal();
+  });
+})();
+</script>
+
 </body>
 </html>
